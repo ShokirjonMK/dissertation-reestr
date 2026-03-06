@@ -1,0 +1,5 @@
+﻿<svg width="160" height="44" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="1" width="42" height="42" rx="10" fill="#4A90E2"/>
+  <path d="M13 14H31V18H13V14ZM13 22H31V26H13V22ZM13 30H24V34H13V30Z" fill="white"/>
+  <text x="52" y="28" fill="#1F2933" font-size="18" font-family="Inter, Arial, sans-serif">Registry</text>
+</svg>

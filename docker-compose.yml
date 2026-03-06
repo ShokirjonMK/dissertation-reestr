@@ -1,0 +1,130 @@
+﻿version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./back
+    container_name: dissertation-backend
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+      - search-service
+      - integration-service
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - backend_network
+      - services_network
+      - database_network
+
+  frontend:
+    build:
+      context: ./front
+    container_name: dissertation-frontend
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - proxy_network
+      - backend_network
+
+  search-service:
+    build:
+      context: ./services/search-service
+    container_name: dissertation-search-service
+    env_file:
+      - .env
+    depends_on:
+      - elasticsearch
+    ports:
+      - "${SEARCH_SERVICE_PORT:-8001}:8001"
+    networks:
+      - services_network
+      - database_network
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+    container_name: dissertation-ai-service
+    env_file:
+      - .env
+    depends_on:
+      - search-service
+    ports:
+      - "${AI_SERVICE_PORT:-8002}:8002"
+    networks:
+      - services_network
+
+  integration-service:
+    build:
+      context: ./services/integration-service
+    container_name: dissertation-integration-service
+    env_file:
+      - .env
+    ports:
+      - "${INTEGRATION_SERVICE_PORT:-8003}:8003"
+    networks:
+      - services_network
+
+  postgres:
+    image: postgres:16
+    container_name: dissertation-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dissertation_registry}
+      POSTGRES_USER: ${POSTGRES_USER:-registry_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-registry_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./volumes/postgres-data:/var/lib/postgresql/data
+      - ./databases/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - database_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: dissertation-elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-elasticpassword}
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "${ELASTIC_PORT:-9200}:9200"
+    volumes:
+      - ./volumes/elastic-data:/usr/share/elasticsearch/data
+      - ./databases/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    networks:
+      - database_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dissertation-redis
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./volumes/redis-data:/data
+      - ./databases/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - database_network
+
+networks:
+  proxy_network:
+    name: proxy_network
+    driver: bridge
+  backend_network:
+    name: backend_network
+    driver: bridge
+  services_network:
+    name: services_network
+    driver: bridge
+  database_network:
+    name: database_network
+    driver: bridge

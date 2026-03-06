@@ -1,0 +1,82 @@
+﻿version: "3.9"
+
+services:
+  backend:
+    image: dissertation-registry/backend:latest
+    env_file: [../../.env]
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks: [backend_network, services_network, database_network]
+
+  frontend:
+    image: dissertation-registry/frontend:latest
+    env_file: [../../.env]
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks: [proxy_network, backend_network]
+
+  search-service:
+    image: dissertation-registry/search-service:latest
+    env_file: [../../.env]
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    networks: [services_network, database_network]
+
+  ai-service:
+    image: dissertation-registry/ai-service:latest
+    env_file: [../../.env]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks: [services_network]
+
+  integration-service:
+    image: dissertation-registry/integration-service:latest
+    env_file: [../../.env]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks: [services_network]
+
+  postgres:
+    image: postgres:16
+    env_file: [../../.env]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [database_network]
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    networks: [database_network]
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    env_file: [../../.env]
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+    networks: [database_network]
+
+networks:
+  proxy_network:
+    external: true
+  backend_network:
+    external: true
+  services_network:
+    external: true
+  database_network:
+    external: true
+
+volumes:
+  postgres-data:
+  redis-data:
+  elastic-data:

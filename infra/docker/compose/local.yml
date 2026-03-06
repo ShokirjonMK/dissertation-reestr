@@ -1,0 +1,7 @@
+version: "3.9"
+
+# Convenience file kept for infra structure compliance.
+# Use root compose from repository root:
+# docker compose up -d --build
+
+services: {}
