@@ -1,5 +1,3 @@
-﻿version: "3.9"
-
 services:
   backend:
     build:
@@ -8,13 +6,27 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
-      - redis
-      - elasticsearch
-      - search-service
-      - integration-service
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+      search-service:
+        condition: service_healthy
+      integration-service:
+        condition: service_healthy
     ports:
       - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./volumes/backend-storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=5).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - backend_network
       - services_network
@@ -27,9 +39,17 @@ services:
     env_file:
       - .env
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - proxy_network
       - backend_network
@@ -41,9 +61,17 @@ services:
     env_file:
       - .env
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_started
     ports:
       - "${SEARCH_SERVICE_PORT:-8001}:8001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
     networks:
       - services_network
       - database_network
@@ -55,9 +83,17 @@ services:
     env_file:
       - .env
     depends_on:
-      - search-service
+      search-service:
+        condition: service_healthy
     ports:
       - "${AI_SERVICE_PORT:-8002}:8002"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=5).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
     networks:
       - services_network
 
@@ -69,6 +105,13 @@ services:
       - .env
     ports:
       - "${INTEGRATION_SERVICE_PORT:-8003}:8003"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health', timeout=5).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     networks:
       - services_network
 
@@ -81,8 +124,15 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-registry_password}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-registry_user} -d ${POSTGRES_DB:-dissertation_registry}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     volumes:
-      - ./volumes/postgres-data:/var/lib/postgresql/data
+      - ./volumes/postgres-data/data:/var/lib/postgresql/data
       - ./databases/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - database_network
@@ -97,6 +147,7 @@ services:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "${ELASTIC_PORT:-9200}:9200"
+    restart: unless-stopped
     volumes:
       - ./volumes/elastic-data:/usr/share/elasticsearch/data
       - ./databases/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
@@ -109,6 +160,13 @@ services:
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     volumes:
       - ./volumes/redis-data:/data
       - ./databases/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro

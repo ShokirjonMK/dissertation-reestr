@@ -7,6 +7,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -136,15 +137,91 @@ class Dissertation(Base, TimestampMixin):
     university_id: Mapped[int] = mapped_column(ForeignKey("universities.id"), nullable=False)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     supervisor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
     problem: Mapped[str] = mapped_column(Text, nullable=False)
     proposal: Mapped[str] = mapped_column(Text, nullable=False)
     annotation: Mapped[str] = mapped_column(Text, nullable=False)
     conclusion: Mapped[str] = mapped_column(Text, nullable=False)
     keywords: Mapped[list[str]] = mapped_column(JSON, default=list)
     defense_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    category: Mapped[str] = mapped_column(String(80), default="general")
+    expert_rating: Mapped[float] = mapped_column(Float, default=0.0)
+    visibility: Mapped[str] = mapped_column(String(20), default="internal")
     status: Mapped[DissertationStatus] = mapped_column(Enum(DissertationStatus), default=DissertationStatus.DRAFT)
 
     scientific_direction: Mapped[ScientificDirection] = relationship("ScientificDirection")
     university: Mapped[University] = relationship("University")
     author: Mapped[User] = relationship("User", foreign_keys=[author_id])
-    supervisor: Mapped[User] = relationship("User", foreign_keys=[supervisor_id])
+    supervisor: Mapped[User | None] = relationship("User", foreign_keys=[supervisor_id])
+    region: Mapped[Region | None] = relationship("Region")
+    document: Mapped["DissertationDocument | None"] = relationship(
+        "DissertationDocument",
+        back_populates="dissertation",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    @property
+    def author_name(self) -> str:
+        return self.author.username if self.author else ""
+
+    @property
+    def supervisor_name(self) -> str:
+        return self.supervisor.username if self.supervisor else ""
+
+    @property
+    def university_name(self) -> str:
+        return self.university.name if self.university else ""
+
+    @property
+    def scientific_direction_name(self) -> str:
+        return self.scientific_direction.name if self.scientific_direction else ""
+
+    @property
+    def autoreferat_text(self) -> str | None:
+        return self.document.autoreferat_text if self.document else None
+
+    @property
+    def dissertation_word_text(self) -> str | None:
+        return self.document.dissertation_word_text if self.document else None
+
+    @property
+    def autoreferat_file_name(self) -> str | None:
+        return self.document.autoreferat_file_name if self.document else None
+
+    @property
+    def dissertation_pdf_file_name(self) -> str | None:
+        return self.document.dissertation_pdf_file_name if self.document else None
+
+    @property
+    def dissertation_word_file_name(self) -> str | None:
+        return self.document.dissertation_word_file_name if self.document else None
+
+    @property
+    def has_autoreferat_file(self) -> bool:
+        return bool(self.document and self.document.autoreferat_file_path)
+
+    @property
+    def has_dissertation_pdf_file(self) -> bool:
+        return bool(self.document and self.document.dissertation_pdf_file_path)
+
+    @property
+    def has_dissertation_word_file(self) -> bool:
+        return bool(self.document and self.document.dissertation_word_file_path)
+
+
+class DissertationDocument(Base, TimestampMixin):
+    __tablename__ = "dissertation_documents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    dissertation_id: Mapped[int] = mapped_column(ForeignKey("dissertations.id"), unique=True, nullable=False)
+    autoreferat_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    autoreferat_file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    autoreferat_file_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    dissertation_pdf_file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    dissertation_pdf_file_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    dissertation_word_file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    dissertation_word_file_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    dissertation_word_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    dissertation: Mapped[Dissertation] = relationship("Dissertation", back_populates="document")

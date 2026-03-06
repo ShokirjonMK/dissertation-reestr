@@ -1,100 +1,82 @@
-﻿import { FormEvent, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import Link from "next/link";
 
-import DissertationTable from "@/components/DissertationTable";
+import AdvancedFilters from "@/components/dashboard/AdvancedFilters";
+import DissertationTable from "@/components/dashboard/DissertationTable";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 import DashboardLayout from "@/layouts/DashboardLayout";
-import { fetchCatalog, fetchDissertations, type CatalogItem, type Dissertation } from "@/services/api";
-import { getToken } from "@/store/auth";
+import { fetchCatalog, fetchDissertations } from "@/services/api";
+import { useAuthStore } from "@/store/auth-store";
+import { useFiltersStore } from "@/store/filters-store";
+import type { SearchQueryParams } from "@/types";
 
 export default function DissertationsPage() {
-  const [items, setItems] = useState<Dissertation[]>([]);
-  const [directions, setDirections] = useState<CatalogItem[]>([]);
-  const [universities, setUniversities] = useState<CatalogItem[]>([]);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("");
-  const [scientificDirectionId, setScientificDirectionId] = useState("");
-  const [universityId, setUniversityId] = useState("");
+  const { hasHydrated, isAuthenticated } = useAuthGuard();
+  const allowed = hasHydrated && isAuthenticated;
+  const currentUser = useAuthStore((state) => state.user);
+  const canCreate = currentUser?.role.name === "admin" || currentUser?.role.name === "doctorant";
+  const filters = useFiltersStore((state) => state.filters);
+  const [appliedFilters, setAppliedFilters] = useState<SearchQueryParams>({ ...filters });
 
-  const load = async () => {
-    const data = await fetchDissertations({
-      query,
-      status,
-      scientific_direction_id: scientificDirectionId,
-      university_id: universityId,
-    });
-    setItems(data);
-  };
+  const directionsQuery = useQuery({
+    queryKey: ["catalog", "directions"],
+    queryFn: () => fetchCatalog("scientific-directions"),
+    enabled: allowed,
+  });
 
-  useEffect(() => {
-    if (!getToken()) {
-      window.location.href = "/login";
-      return;
-    }
-    load().catch(() => setItems([]));
+  const universitiesQuery = useQuery({
+    queryKey: ["catalog", "universities"],
+    queryFn: () => fetchCatalog("universities"),
+    enabled: allowed,
+  });
 
-    Promise.all([fetchCatalog("scientific-directions"), fetchCatalog("universities")])
-      .then(([dirs, unis]) => {
-        setDirections(dirs);
-        setUniversities(unis);
-      })
-      .catch(() => {
-        setDirections([]);
-        setUniversities([]);
-      });
-  }, []);
+  const regionsQuery = useQuery({
+    queryKey: ["catalog", "regions"],
+    queryFn: () => fetchCatalog("regions"),
+    enabled: allowed,
+  });
 
-  const onFilter = async (e: FormEvent) => {
-    e.preventDefault();
-    await load();
-  };
+  const dissertationsQuery = useQuery({
+    queryKey: ["dissertations", appliedFilters],
+    queryFn: () => fetchDissertations(appliedFilters),
+    enabled: allowed,
+  });
+
+  if (!hasHydrated) {
+    return <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Session tekshirilmoqda...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
-    <DashboardLayout title="Dissertations">
-      <form className="card filters" onSubmit={onFilter}>
-        <div className="filter-grid">
-          <label>
-            Search
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Muammo, taklif, xulosa..." />
-          </label>
-          <label>
-            Status
-            <select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="">All</option>
-              <option value="draft">draft</option>
-              <option value="pending">pending</option>
-              <option value="approved">approved</option>
-              <option value="rejected">rejected</option>
-              <option value="defended">defended</option>
-            </select>
-          </label>
-          <label>
-            Scientific direction
-            <select value={scientificDirectionId} onChange={(e) => setScientificDirectionId(e.target.value)}>
-              <option value="">All</option>
-              {directions.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            University
-            <select value={universityId} onChange={(e) => setUniversityId(e.target.value)}>
-              <option value="">All</option>
-              {universities.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <button className="btn" type="submit">
-          Filter
-        </button>
-      </form>
+    <DashboardLayout title="Dissertations Registry" subtitle="Sorting, filtering, pagination, status indicators">
+      <AdvancedFilters
+        directions={directionsQuery.data || []}
+        universities={universitiesQuery.data || []}
+        regions={regionsQuery.data || []}
+        onApply={() => setAppliedFilters({ ...filters })}
+      />
 
-      <DissertationTable items={items} />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-base">Search Results</CardTitle>
+            {canCreate ? (
+              <Button asChild>
+                <Link href="/dashboard/dissertations/new">Dissertatsiya qo&apos;shish</Link>
+              </Button>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DissertationTable items={dissertationsQuery.data || []} />
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import auth, catalogs, dissertations, health, search, users
 from app.core.config import settings
 from app.core.database import Base, engine
+from app.services.reindex_service import sync_dissertations_to_search
 from app.services.seed_service import bootstrap_defaults
 
 Base.metadata.create_all(bind=engine)
@@ -29,3 +30,4 @@ app.include_router(search.router, prefix="/api/v1", tags=["search-ai"])
 @app.on_event("startup")
 def on_startup() -> None:
     bootstrap_defaults()
+    sync_dissertations_to_search()

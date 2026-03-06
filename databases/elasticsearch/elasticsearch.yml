@@ -1,4 +1,4 @@
-﻿cluster.name: dissertation-registry
+cluster.name: dissertation-registry
 network.host: 0.0.0.0
 http.port: 9200
 xpack.security.enabled: true

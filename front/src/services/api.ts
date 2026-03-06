@@ -1,4 +1,15 @@
-﻿import { getToken } from "@/store/auth";
+import { useAuthStore } from "@/store/auth-store";
+import type {
+  CatalogItem,
+  Dissertation,
+  DissertationDetail,
+  DissertationFileKind,
+  SearchQueryParams,
+  User,
+  UserCreatePayload,
+  UserLookup,
+  UserUpdatePayload,
+} from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -8,85 +19,130 @@ type RequestOptions = {
   auth?: boolean;
 };
 
+function buildAuthHeaders(auth = true): HeadersInit {
+  const token = useAuthStore.getState().token;
+  if (!auth || !token) {
+    return {};
+  }
+  return { Authorization: `Bearer ${token}` };
+}
+
+async function parseError(response: Response): Promise<Error> {
+  const text = await response.text();
+  try {
+    const payload = JSON.parse(text) as { detail?: string };
+    return new Error(payload.detail || `Request failed (${response.status})`);
+  } catch {
+    return new Error(text || `Request failed (${response.status})`);
+  }
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
+    ...buildAuthHeaders(options.auth !== false),
   };
 
-  if (options.auth !== false) {
-    const token = getToken();
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-  }
-
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method || "GET",
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed with status ${res.status}`);
+  if (!response.ok) {
+    throw await parseError(response);
   }
 
-  return (await res.json()) as T;
+  return (await response.json()) as T;
 }
 
-export type LoginResponse = {
-  access_token: string;
-  token_type: string;
-};
-
-export type Dissertation = {
-  id: number;
-  title: string;
-  scientific_direction_id: number;
-  university_id: number;
-  author_id: number;
-  supervisor_id: number | null;
-  problem: string;
-  proposal: string;
-  annotation: string;
-  conclusion: string;
-  keywords: string[];
-  defense_date: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-};
-
-export type CatalogItem = {
-  id: number;
-  name: string;
-};
-
-export async function login(username: string, password: string): Promise<LoginResponse> {
-  return request<LoginResponse>("/auth/login", {
+export async function login(username: string, password: string) {
+  return request<{ access_token: string; token_type: string }>("/auth/login", {
     method: "POST",
     auth: false,
     body: { username, password },
   });
 }
 
-export async function fetchDissertations(queryParams: Record<string, string | number | undefined>): Promise<Dissertation[]> {
-  const qs = new URLSearchParams();
-  Object.entries(queryParams).forEach(([key, value]) => {
-    if (value !== undefined && value !== "") {
-      qs.set(key, String(value));
+export async function fetchMe() {
+  return request<User>("/auth/me");
+}
+
+export async function fetchDissertations(filters: SearchQueryParams = {}) {
+  const query = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value) !== "") {
+      query.set(key, String(value));
     }
   });
-  return request<Dissertation[]>(`/dissertations/?${qs.toString()}`);
+
+  const suffix = query.toString();
+  return request<Dissertation[]>(`/dissertations/${suffix ? `?${suffix}` : ""}`);
+}
+
+export async function fetchDissertation(dissertationId: number) {
+  return request<DissertationDetail>(`/dissertations/${dissertationId}`);
+}
+
+export async function createDissertation(formData: FormData) {
+  const response = await fetch(`${API_BASE_URL}/dissertations/submit`, {
+    method: "POST",
+    headers: buildAuthHeaders(true),
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw await parseError(response);
+  }
+
+  return (await response.json()) as DissertationDetail;
+}
+
+export async function fetchDissertationFile(dissertationId: number, fileKind: DissertationFileKind) {
+  const response = await fetch(`${API_BASE_URL}/dissertations/${dissertationId}/files/${fileKind}`, {
+    method: "GET",
+    headers: buildAuthHeaders(true),
+  });
+
+  if (!response.ok) {
+    throw await parseError(response);
+  }
+
+  const disposition = response.headers.get("content-disposition") || "";
+  const matched = disposition.match(/filename=\"?([^\";]+)\"?/i);
+  const filename = matched?.[1] || `dissertation_${dissertationId}_${fileKind}`;
+  const blob = await response.blob();
+  return { filename, blob };
 }
 
 export async function fetchCatalog(path: "scientific-directions" | "universities" | "regions" | "districts") {
   return request<CatalogItem[]>(`/catalogs/${path}`);
 }
 
-export async function askAI(question: string) {
-  return request<{ answer: string; references: Array<Record<string, unknown>> }>("/ai/ask", {
+export async function fetchUserLookup(role?: string) {
+  const suffix = role ? `?role=${encodeURIComponent(role)}` : "";
+  return request<UserLookup[]>(`/users/lookup${suffix}`);
+}
+
+export async function fetchUsers() {
+  return request<User[]>("/users/");
+}
+
+export async function createUser(payload: UserCreatePayload) {
+  return request<User>("/users/", { method: "POST", body: payload });
+}
+
+export async function updateUser(userId: number, payload: UserUpdatePayload) {
+  return request<User>(`/users/${userId}`, { method: "PUT", body: payload });
+}
+
+export async function deleteUser(userId: number) {
+  return request<{ deleted: boolean }>(`/users/${userId}`, { method: "DELETE" });
+}
+
+export async function askAI(question: string, topK = 5) {
+  return request<{ answer: string; references: Array<{ id: string; source: Record<string, string> }> }>("/ai/ask", {
     method: "POST",
-    body: { question, top_k: 5 },
+    body: { question, top_k: topK },
   });
 }

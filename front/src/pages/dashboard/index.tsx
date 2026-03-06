@@ -1,57 +1,75 @@
-﻿import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { BadgeCheck, Clock3, FileText, UserRoundCheck } from "lucide-react";
+import { useMemo } from "react";
 
-import StatCard from "@/components/StatCard";
+import AIAssistantChat from "@/components/dashboard/AIAssistantChat";
+import StatCard from "@/components/dashboard/StatCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 import DashboardLayout from "@/layouts/DashboardLayout";
-import { askAI, fetchDissertations } from "@/services/api";
-import { getToken } from "@/store/auth";
+import { fetchDissertations } from "@/services/api";
 
 export default function DashboardPage() {
-  const [total, setTotal] = useState("0");
-  const [approved, setApproved] = useState("0");
-  const [pending, setPending] = useState("0");
-  const [question, setQuestion] = useState("Dissertatsiyalarda uchraydigan asosiy huquqiy muammolar nimalar?");
-  const [aiAnswer, setAiAnswer] = useState<string>("");
+  const { hasHydrated, isAuthenticated } = useAuthGuard();
+  const allowed = hasHydrated && isAuthenticated;
 
-  useEffect(() => {
-    if (!getToken()) {
-      window.location.href = "/login";
-      return;
-    }
+  const dissertationsQuery = useQuery({
+    queryKey: ["dissertations", "dashboard-overview"],
+    queryFn: () => fetchDissertations({}),
+    enabled: allowed,
+  });
 
-    fetchDissertations({})
-      .then((items) => {
-        setTotal(String(items.length));
-        setApproved(String(items.filter((x) => x.status === "approved").length));
-        setPending(String(items.filter((x) => x.status === "pending").length));
-      })
-      .catch(() => {
-        setTotal("0");
-      });
-  }, []);
+  const stats = useMemo(() => {
+    const items = dissertationsQuery.data || [];
+    const supervisors = new Set(items.map((item) => item.supervisor_id).filter(Boolean));
+    return {
+      total: items.length,
+      pending: items.filter((item) => item.status === "pending").length,
+      approved: items.filter((item) => item.status === "approved").length,
+      mentors: supervisors.size,
+    };
+  }, [dissertationsQuery.data]);
 
-  const onAsk = async () => {
-    const result = await askAI(question);
-    setAiAnswer(result.answer);
-  };
+  if (!hasHydrated) {
+    return <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Session tekshirilmoqda...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
-    <DashboardLayout title="Dashboard">
-      <section className="stats-grid">
-        <StatCard label="Jami dissertatsiyalar" value={total} />
-        <StatCard label="Tasdiqlangan" value={approved} tone="success" />
-        <StatCard label="Kutilmoqda" value={pending} tone="warning" />
+    <DashboardLayout title="Registry Dashboard" subtitle="Glass UI layout with right widget panel">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Total Dissertations" value={String(stats.total)} icon={FileText} trend="+12%" status="Active" />
+        <StatCard title="Pending Review" value={String(stats.pending)} icon={Clock3} trend="+3%" status="Review" />
+        <StatCard title="Approved Proposals" value={String(stats.approved)} icon={BadgeCheck} trend="+9%" status="Active" />
+        <StatCard title="Expert Mentors" value={String(stats.mentors)} icon={UserRoundCheck} trend="+2%" status="Stable" />
       </section>
 
-      <section className="card">
-        <h2>AI savol-javob (RAG)</h2>
-        <div className="row">
-          <input value={question} onChange={(e) => setQuestion(e.target.value)} />
-          <button className="btn" onClick={onAsk}>
-            So'rash
-          </button>
-        </div>
-        {aiAnswer && <pre className="ai-answer">{aiAnswer}</pre>}
-      </section>
+      <Tabs defaultValue="assistant" className="w-full">
+        <TabsList>
+          <TabsTrigger value="assistant">AI Assistant</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="assistant" className="space-y-3">
+          <AIAssistantChat />
+        </TabsContent>
+
+        <TabsContent value="insights">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Operational Insights</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Qidiruv va filtrlar orqali dissertatsiya oqimi monitoringi, tasdiqlash tezligi hamda amaliyotga tadbiq
+              ehtimoli ko&apos;rsatkichlari shu panelda kengaytiriladi.
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </DashboardLayout>
   );
 }

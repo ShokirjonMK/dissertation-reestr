@@ -1,6 +1,6 @@
 ﻿from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class RoleRead(BaseModel):
@@ -25,6 +25,20 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    role_name: str
+
+
+class UserUpdate(BaseModel):
+    username: str | None = None
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=6)
+    role_name: str | None = None
+    is_active: bool | None = None
+
+
+class UserLookupRead(BaseModel):
+    id: int
+    username: str
     role_name: str
 
 

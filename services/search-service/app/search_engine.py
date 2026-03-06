@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from collections.abc import Iterable
 from typing import Any
@@ -49,11 +49,21 @@ class SearchEngine:
                     "annotation": {"type": "text", "analyzer": "custom_uz_analyzer"},
                     "conclusion": {"type": "text", "analyzer": "custom_uz_analyzer"},
                     "keywords": {"type": "text", "analyzer": "custom_uz_analyzer"},
+                    "autoreferat_text": {"type": "text", "analyzer": "custom_uz_analyzer"},
+                    "dissertation_word_text": {"type": "text", "analyzer": "custom_uz_analyzer"},
+                    "author_name": {"type": "text", "analyzer": "custom_uz_analyzer"},
+                    "supervisor_name": {"type": "text", "analyzer": "custom_uz_analyzer"},
+                    "university_name": {"type": "text", "analyzer": "custom_uz_analyzer"},
+                    "scientific_direction_name": {"type": "text", "analyzer": "custom_uz_analyzer"},
                     "status": {"type": "keyword"},
+                    "category": {"type": "keyword"},
+                    "visibility": {"type": "keyword"},
+                    "expert_rating": {"type": "float"},
                     "scientific_direction_id": {"type": "integer"},
                     "university_id": {"type": "integer"},
                     "author_id": {"type": "integer"},
                     "supervisor_id": {"type": "integer"},
+                    "region_id": {"type": "integer"},
                     "defense_date": {"type": "date"},
                 }
             },
@@ -81,7 +91,20 @@ class SearchEngine:
                 {
                     "multi_match": {
                         "query": query,
-                        "fields": ["title^3", "problem", "proposal", "annotation", "conclusion", "keywords"],
+                        "fields": [
+                            "title^3",
+                            "problem",
+                            "proposal",
+                            "annotation",
+                            "conclusion",
+                            "keywords",
+                            "autoreferat_text",
+                            "dissertation_word_text",
+                            "author_name",
+                            "supervisor_name",
+                            "university_name",
+                            "scientific_direction_name",
+                        ],
                         "fuzziness": "AUTO",
                     }
                 }
@@ -122,8 +145,23 @@ class SearchEngine:
     def _memory_search(self, query: str, filters: dict[str, Any] | None, size: int) -> dict[str, Any]:
         query_lower = query.lower()
 
+        fields = [
+            "title",
+            "problem",
+            "proposal",
+            "annotation",
+            "conclusion",
+            "keywords",
+            "autoreferat_text",
+            "dissertation_word_text",
+            "author_name",
+            "supervisor_name",
+            "university_name",
+            "scientific_direction_name",
+        ]
+
         def matched(doc: dict[str, Any]) -> bool:
-            haystack = " ".join(str(doc.get(field, "")) for field in ["title", "problem", "proposal", "annotation", "conclusion", "keywords"])
+            haystack = " ".join(str(doc.get(field, "")) for field in fields)
             if query_lower not in haystack.lower():
                 return False
             if not filters:

@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ai_service_url: str = "http://localhost:8002"
     search_service_url: str = "http://localhost:8001"
     integration_service_url: str = "http://localhost:8003"
+    file_storage_path: str = "/app/storage"
 
     jwt_secret: str = "change_me"
     jwt_algorithm: str = "HS256"
@@ -20,6 +21,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
     ]
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
