@@ -14,9 +14,11 @@ volumes/portainer-data/*
 volumes/nginx-data/*
 !volumes/**/.gitkeep
 
+
 infra/nginx/nginx-proxy-manager/data/*
 infra/nginx/nginx-proxy-manager/letsencrypt/*
 infra/portainer/data/*
 !infra/nginx/nginx-proxy-manager/data/.gitkeep
 !infra/nginx/nginx-proxy-manager/letsencrypt/.gitkeep
 !infra/portainer/data/.gitkeep
+volumes/backend-storage/dissertations/*
