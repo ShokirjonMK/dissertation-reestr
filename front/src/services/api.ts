@@ -119,6 +119,73 @@ export async function fetchCatalog(path: "scientific-directions" | "universities
   return request<CatalogItem[]>(`/catalogs/${path}`);
 }
 
+// ─── Ko'p tilli katalog API ───────────────────────────────────────────────────
+
+export async function fetchCountries() {
+  return request<import("@/types").Country[]>("/catalogs/countries");
+}
+export async function createCountry(payload: import("@/types").CountryPayload) {
+  return request<import("@/types").Country>("/catalogs/countries", { method: "POST", body: payload });
+}
+export async function updateCountry(id: number, payload: import("@/types").CountryPayload) {
+  return request<import("@/types").Country>(`/catalogs/countries/${id}`, { method: "PUT", body: payload });
+}
+export async function deleteCountry(id: number) {
+  return request<{ deleted: boolean }>(`/catalogs/countries/${id}`, { method: "DELETE" });
+}
+
+export async function fetchScientificDirections() {
+  return request<import("@/types").ScientificDirection[]>("/catalogs/scientific-directions");
+}
+export async function createScientificDirection(payload: import("@/types").ScientificDirectionPayload) {
+  return request<import("@/types").ScientificDirection>("/catalogs/scientific-directions", { method: "POST", body: payload });
+}
+export async function updateScientificDirection(id: number, payload: import("@/types").ScientificDirectionPayload) {
+  return request<import("@/types").ScientificDirection>(`/catalogs/scientific-directions/${id}`, { method: "PUT", body: payload });
+}
+export async function deleteScientificDirection(id: number) {
+  return request<{ deleted: boolean }>(`/catalogs/scientific-directions/${id}`, { method: "DELETE" });
+}
+
+export async function fetchUniversities() {
+  return request<import("@/types").University[]>("/catalogs/universities");
+}
+export async function createUniversity(payload: import("@/types").UniversityPayload) {
+  return request<import("@/types").University>("/catalogs/universities", { method: "POST", body: payload });
+}
+export async function updateUniversity(id: number, payload: import("@/types").UniversityPayload) {
+  return request<import("@/types").University>(`/catalogs/universities/${id}`, { method: "PUT", body: payload });
+}
+export async function deleteUniversity(id: number) {
+  return request<{ deleted: boolean }>(`/catalogs/universities/${id}`, { method: "DELETE" });
+}
+
+export async function fetchRegions() {
+  return request<import("@/types").Region[]>("/catalogs/regions");
+}
+export async function createRegion(payload: import("@/types").RegionPayload) {
+  return request<import("@/types").Region>("/catalogs/regions", { method: "POST", body: payload });
+}
+export async function updateRegion(id: number, payload: import("@/types").RegionPayload) {
+  return request<import("@/types").Region>(`/catalogs/regions/${id}`, { method: "PUT", body: payload });
+}
+export async function deleteRegion(id: number) {
+  return request<{ deleted: boolean }>(`/catalogs/regions/${id}`, { method: "DELETE" });
+}
+
+export async function fetchDistricts() {
+  return request<import("@/types").District[]>("/catalogs/districts");
+}
+export async function createDistrict(payload: import("@/types").DistrictPayload) {
+  return request<import("@/types").District>("/catalogs/districts", { method: "POST", body: payload });
+}
+export async function updateDistrict(id: number, payload: import("@/types").DistrictPayload) {
+  return request<import("@/types").District>(`/catalogs/districts/${id}`, { method: "PUT", body: payload });
+}
+export async function deleteDistrict(id: number) {
+  return request<{ deleted: boolean }>(`/catalogs/districts/${id}`, { method: "DELETE" });
+}
+
 export async function fetchUserLookup(role?: string) {
   const suffix = role ? `?role=${encodeURIComponent(role)}` : "";
   return request<UserLookup[]>(`/users/lookup${suffix}`);

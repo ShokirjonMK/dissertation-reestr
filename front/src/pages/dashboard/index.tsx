@@ -9,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { fetchDissertations } from "@/services/api";
+import { useI18n } from "@/lib/i18n";
 
 export default function DashboardPage() {
   const { hasHydrated, isAuthenticated } = useAuthGuard();
+  const { t } = useI18n();
   const allowed = hasHydrated && isAuthenticated;
 
   const dissertationsQuery = useQuery({
@@ -40,17 +42,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout title="Registry Dashboard" subtitle="Glass UI layout with right widget panel">
+    <DashboardLayout>
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Dissertations" value={String(stats.total)} icon={FileText} trend="+12%" status="Active" />
-        <StatCard title="Pending Review" value={String(stats.pending)} icon={Clock3} trend="+3%" status="Review" />
-        <StatCard title="Approved Proposals" value={String(stats.approved)} icon={BadgeCheck} trend="+9%" status="Active" />
-        <StatCard title="Expert Mentors" value={String(stats.mentors)} icon={UserRoundCheck} trend="+2%" status="Stable" />
+        <StatCard title={t("dashboard.totalDissertations")} value={String(stats.total)} icon={FileText} trend="+12%" status="Active" />
+        <StatCard title={t("dashboard.pendingReview")} value={String(stats.pending)} icon={Clock3} trend="+3%" status="Review" />
+        <StatCard title={t("dashboard.approvedProposals")} value={String(stats.approved)} icon={BadgeCheck} trend="+9%" status="Active" />
+        <StatCard title={t("dashboard.expertMentors")} value={String(stats.mentors)} icon={UserRoundCheck} trend="+2%" status="Stable" />
       </section>
 
       <Tabs defaultValue="assistant" className="w-full">
         <TabsList>
-          <TabsTrigger value="assistant">AI Assistant</TabsTrigger>
+          <TabsTrigger value="assistant">{t("ai.title")}</TabsTrigger>
           <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
@@ -61,7 +63,7 @@ export default function DashboardPage() {
         <TabsContent value="insights">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Operational Insights</CardTitle>
+              <CardTitle className="text-base">Tahlil paneli</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground">
               Qidiruv va filtrlar orqali dissertatsiya oqimi monitoringi, tasdiqlash tezligi hamda amaliyotga tadbiq

@@ -1,385 +1,382 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+/**
+ * Dissertatsiya yuklash — 6 bosqichli Wizard
+ */
+"use client";
+
+import Head from "next/head";
 import { useRouter } from "next/router";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Check, ChevronRight } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useAuthGuard } from "@/hooks/use-auth-guard";
 import DashboardLayout from "@/layouts/DashboardLayout";
-import { createDissertation, fetchCatalog, fetchMe, fetchUserLookup } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { TagInput } from "@/components/ui/tag-input";
+import { FileUpload } from "@/components/ui/file-upload";
+import { AuthorSelectModal } from "@/components/dashboard/AuthorSelectModal";
+import { useI18n } from "@/lib/i18n";
 import { useAuthStore } from "@/store/auth-store";
+import * as api from "@/services/api";
+import type { DissertationWizardData } from "@/types";
 
-export default function DissertationCreatePage() {
+const TOTAL_STEPS = 6;
+
+const INITIAL_DATA: DissertationWizardData = {
+  title: "",
+  scientific_direction_id: null,
+  university_id: null,
+  country_id: null,
+  region_id: null,
+  defense_date: "",
+  problem: "",
+  proposal: "",
+  keywords: [],
+  annotation: "",
+  conclusion: "",
+  author_id: null,
+  supervisor_id: null,
+  autoreferat_file: null,
+  dissertation_pdf_file: null,
+  dissertation_word_file: null,
+  category: "general",
+  visibility: "internal",
+};
+
+const KEYWORD_SUGGESTIONS = [
+  "konstitutsion huquq", "fuqarolik huquqi", "jinoyat huquqi", "ma'muriy huquq",
+  "xalqaro huquq", "mehnat huquqi", "tijorat huquqi", "mediatsiya", "arbitraj",
+  "raqamlashtirish", "blockchain", "elektron hukumat", "sud islohotlari",
+  "huquqiy davlat", "inson huquqlari", "korrupsiyaga qarshi", "notariatchilik",
+];
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="w-36 shrink-0 text-xs text-muted-foreground">{label}:</span>
+      <span className="font-medium">{value || "—"}</span>
+    </div>
+  );
+}
+
+export default function NewDissertationPage() {
+  const { t } = useI18n();
   const router = useRouter();
-  const { hasHydrated, isAuthenticated } = useAuthGuard();
-  const allowed = hasHydrated && isAuthenticated;
-  const storedUser = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
+  const currentUser = useAuthStore((s) => s.user);
 
-  const meQuery = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: fetchMe,
-    enabled: allowed && !storedUser,
+  const [step, setStep] = useState(1);
+  const [data, setData] = useState<DissertationWizardData>({
+    ...INITIAL_DATA,
+    author_id: currentUser?.id ?? null,
   });
+  const [authorLabel, setAuthorLabel] = useState(currentUser?.username ?? "");
+  const [supervisorLabel, setSupervisorLabel] = useState("");
+  const [authorModalOpen, setAuthorModalOpen] = useState(false);
+  const [supervisorModalOpen, setSupervisorModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (meQuery.data) {
-      setUser(meQuery.data);
-    }
-  }, [meQuery.data, setUser]);
+  const { data: directions = [] } = useQuery({ queryKey: ["scientific-directions"], queryFn: api.fetchScientificDirections });
+  const { data: universities = [] } = useQuery({ queryKey: ["universities"], queryFn: api.fetchUniversities });
+  const { data: countries = [] } = useQuery({ queryKey: ["countries"], queryFn: api.fetchCountries });
+  const { data: regions = [] } = useQuery({ queryKey: ["regions"], queryFn: api.fetchRegions });
 
-  const currentUser = storedUser || meQuery.data;
-  const isAdmin = currentUser?.role.name === "admin";
-  const canCreate = currentUser?.role.name === "admin" || currentUser?.role.name === "doctorant";
-
-  const directionsQuery = useQuery({
-    queryKey: ["catalog", "directions"],
-    queryFn: () => fetchCatalog("scientific-directions"),
-    enabled: allowed,
-  });
-  const universitiesQuery = useQuery({
-    queryKey: ["catalog", "universities"],
-    queryFn: () => fetchCatalog("universities"),
-    enabled: allowed,
-  });
-  const regionsQuery = useQuery({
-    queryKey: ["catalog", "regions"],
-    queryFn: () => fetchCatalog("regions"),
-    enabled: allowed,
-  });
-  const supervisorsQuery = useQuery({
-    queryKey: ["users", "lookup", "supervisor"],
-    queryFn: () => fetchUserLookup("supervisor"),
-    enabled: allowed,
-  });
-  const authorsQuery = useQuery({
-    queryKey: ["users", "lookup", "authors"],
-    queryFn: () => fetchUserLookup(),
-    enabled: allowed && isAdmin,
-  });
-
-  const [title, setTitle] = useState("");
-  const [scientificDirectionId, setScientificDirectionId] = useState("");
-  const [universityId, setUniversityId] = useState("");
-  const [authorId, setAuthorId] = useState("");
-  const [supervisorId, setSupervisorId] = useState("");
-  const [regionId, setRegionId] = useState("");
-  const [problem, setProblem] = useState("");
-  const [proposal, setProposal] = useState("");
-  const [annotation, setAnnotation] = useState("");
-  const [conclusion, setConclusion] = useState("");
-  const [keywords, setKeywords] = useState("");
-  const [defenseDate, setDefenseDate] = useState("");
-  const [statusValue, setStatusValue] = useState("draft");
-  const [category, setCategory] = useState("general");
-  const [expertRating, setExpertRating] = useState("0");
-  const [visibility, setVisibility] = useState("internal");
-  const [autoreferatText, setAutoreferatText] = useState("");
-  const [autoreferatFile, setAutoreferatFile] = useState<File | null>(null);
-  const [dissertationPdfFile, setDissertationPdfFile] = useState<File | null>(null);
-  const [dissertationWordFile, setDissertationWordFile] = useState<File | null>(null);
-
-  const defaultAuthorId = useMemo(() => String(currentUser?.id || ""), [currentUser?.id]);
-
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("scientific_direction_id", scientificDirectionId);
-      formData.append("university_id", universityId);
-      formData.append("problem", problem);
-      formData.append("proposal", proposal);
-      formData.append("annotation", annotation);
-      formData.append("conclusion", conclusion);
-      formData.append("keywords", keywords);
-      formData.append("status", statusValue);
-      formData.append("category", category);
-      formData.append("expert_rating", expertRating || "0");
-      formData.append("visibility", visibility);
-      formData.append("autoreferat_text", autoreferatText);
-
-      if (isAdmin && authorId) {
-        formData.append("author_id", authorId);
-      }
-      if (!isAdmin && defaultAuthorId) {
-        formData.append("author_id", defaultAuthorId);
-      }
-      if (supervisorId) {
-        formData.append("supervisor_id", supervisorId);
-      }
-      if (regionId) {
-        formData.append("region_id", regionId);
-      }
-      if (defenseDate) {
-        formData.append("defense_date", defenseDate);
-      }
-      if (autoreferatFile) {
-        formData.append("autoreferat_file", autoreferatFile);
-      }
-      if (dissertationPdfFile) {
-        formData.append("dissertation_pdf_file", dissertationPdfFile);
-      }
-      if (dissertationWordFile) {
-        formData.append("dissertation_word_file", dissertationWordFile);
-      }
-
-      return createDissertation(formData);
-    },
-    onSuccess: (created) => {
-      toast.success("Dissertatsiya muvaffaqiyatli qo'shildi");
-      void router.push(`/dashboard/dissertations/${created.id}`);
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Saqlashda xatolik");
-    },
-  });
-
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (createMutation.isPending) {
-      return;
-    }
-    if (!canCreate) {
-      toast.error("Sizda dissertatsiya yaratish huquqi yo'q");
-      return;
-    }
-    await createMutation.mutateAsync();
+  const set = <K extends keyof DissertationWizardData>(key: K, value: DissertationWizardData[K]) => {
+    setData((prev) => ({ ...prev, [key]: value }));
   };
 
-  if (!hasHydrated) {
-    return <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Session tekshirilmoqda...</div>;
-  }
+  const steps = [
+    t("wizard.step1"), t("wizard.step2"), t("wizard.step3"),
+    t("wizard.step4"), t("wizard.step5"), t("wizard.step6"),
+  ];
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  const canNext = (): boolean => {
+    if (step === 1) return !!data.title.trim() && !!data.scientific_direction_id && !!data.university_id;
+    if (step === 2) return !!data.problem.trim() && !!data.proposal.trim();
+    if (step === 3) return data.keywords.length > 0 && !!data.annotation.trim();
+    if (step === 4) return !!data.author_id;
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!data.author_id || !data.scientific_direction_id || !data.university_id) {
+      toast.error("Majburiy maydonlarni to'ldiring");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      const fields: (keyof DissertationWizardData)[] = [
+        "title", "scientific_direction_id", "university_id", "country_id",
+        "region_id", "defense_date", "problem", "proposal", "annotation",
+        "conclusion", "author_id", "supervisor_id", "category", "visibility",
+      ];
+      fields.forEach((field) => {
+        const val = data[field];
+        if (val !== null && val !== undefined && val !== "") {
+          formData.append(field, String(val));
+        }
+      });
+      formData.append("keywords", JSON.stringify(data.keywords));
+      if (data.autoreferat_file) formData.append("autoreferat_file", data.autoreferat_file);
+      if (data.dissertation_pdf_file) formData.append("dissertation_pdf_file", data.dissertation_pdf_file);
+      if (data.dissertation_word_file) formData.append("dissertation_word_file", data.dissertation_word_file);
+
+      await api.createDissertation(formData);
+      toast.success("Dissertatsiya muvaffaqiyatli yuklandi!");
+      void router.push("/dashboard/dissertations");
+    } catch (e: unknown) {
+      toast.error((e as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Standart qiymatlar
+  const uzbekistanId = countries.find((c) => c.code === "UZ")?.id;
+  const tdyuId = universities.find((u) => u.name_uz?.includes("Toshkent Davlat Yuridik"))?.id;
+  if (uzbekistanId && !data.country_id) set("country_id", uzbekistanId);
+  if (tdyuId && !data.university_id) set("university_id", tdyuId);
 
   return (
-    <DashboardLayout title="Dissertatsiya Qo'shish" subtitle="To'liq ma'lumotlar va fayllarni bir joyda saqlash">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Yangi dissertatsiya</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!canCreate ? (
-            <p className="text-sm text-destructive">Ushbu amal faqat Admin yoki Doktorant roli uchun ruxsat etilgan.</p>
-          ) : (
-            <form className="space-y-4" onSubmit={onSubmit}>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm">Dissertatsiya nomi</label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
-                </div>
+    <>
+      <Head>
+        <title>{t("dissertation.addNew")} — Registry</title>
+      </Head>
+      <DashboardLayout>
+        <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-6">
+          <h1 className="text-xl font-medium tracking-tight">{t("dissertation.addNew")}</h1>
 
-                <div>
-                  <label className="mb-1 block text-sm">Ilmiy yo&apos;nalish</label>
-                  <Select value={scientificDirectionId || undefined} onValueChange={setScientificDirectionId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Yo'nalishni tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(directionsQuery.data || []).map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Wizard progress */}
+          <nav aria-label="Wizard bosqichlari">
+            <ol className="flex items-center gap-1 overflow-x-auto pb-1">
+              {steps.map((stepLabel, idx) => {
+                const num = idx + 1;
+                const done = step > num;
+                const active = step === num;
+                return (
+                  <li key={num} className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => done && setStep(num)}
+                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors ${
+                        done ? "bg-primary text-primary-foreground cursor-pointer"
+                        : active ? "border-2 border-primary bg-primary/10 text-primary"
+                        : "border border-border/60 bg-muted/30 text-muted-foreground"
+                      }`}
+                    >
+                      {done ? <Check className="h-3.5 w-3.5" /> : num}
+                    </button>
+                    <span className={`hidden text-xs sm:inline ${active ? "font-medium text-primary" : "text-muted-foreground"}`}>
+                      {stepLabel}
+                    </span>
+                    {num < TOTAL_STEPS && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
-                <div>
-                  <label className="mb-1 block text-sm">Universitet</label>
-                  <Select value={universityId || undefined} onValueChange={setUniversityId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Universitetni tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(universitiesQuery.data || []).map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          <Card className="border-border/60 bg-white/70 shadow-sm backdrop-blur dark:bg-slate-900/60">
+            <CardContent className="space-y-4 pt-5">
 
-                <div>
-                  <label className="mb-1 block text-sm">Muallif</label>
-                  {isAdmin ? (
-                    <Select value={authorId || undefined} onValueChange={setAuthorId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Muallifni tanlang" />
-                      </SelectTrigger>
+              {/* Step 1 */}
+              {step === 1 && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-medium">{t("wizard.step1")}</h2>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.title")} *</Label>
+                    <Input value={data.title} onChange={(e) => set("title", e.target.value)} placeholder="Dissertatsiya nomini kiriting..." />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.direction")} *</Label>
+                    <Select value={data.scientific_direction_id ? String(data.scientific_direction_id) : ""} onValueChange={(v) => set("scientific_direction_id", Number(v))}>
+                      <SelectTrigger><SelectValue placeholder="Yo'nalish tanlang..." /></SelectTrigger>
                       <SelectContent>
-                        {(authorsQuery.data || []).map((item) => (
-                          <SelectItem key={item.id} value={String(item.id)}>
-                            {item.username} ({item.role_name})
-                          </SelectItem>
-                        ))}
+                        {directions.map((d) => <SelectItem key={d.id} value={String(d.id)}>{d.name_uz}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <Input value={currentUser?.username || ""} disabled />
-                  )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("dissertation.country")}</Label>
+                      <Select value={data.country_id ? String(data.country_id) : ""} onValueChange={(v) => set("country_id", Number(v))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Mamlakat..." /></SelectTrigger>
+                        <SelectContent>
+                          {countries.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name_uz}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{t("dissertation.region")}</Label>
+                      <Select value={data.region_id ? String(data.region_id) : ""} onValueChange={(v) => set("region_id", Number(v))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Region..." /></SelectTrigger>
+                        <SelectContent>
+                          {regions.filter((r) => !data.country_id || r.country_id === data.country_id).map((r) => (
+                            <SelectItem key={r.id} value={String(r.id)}>{r.name_uz}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.university")} *</Label>
+                    <Select value={data.university_id ? String(data.university_id) : ""} onValueChange={(v) => set("university_id", Number(v))}>
+                      <SelectTrigger><SelectValue placeholder="Universitet tanlang..." /></SelectTrigger>
+                      <SelectContent>
+                        {universities.map((u) => <SelectItem key={u.id} value={String(u.id)}>{u.short_name ? `${u.short_name} — ` : ""}{u.name_uz}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.defenseDate")}</Label>
+                    <Input type="date" value={data.defense_date} onChange={(e) => set("defense_date", e.target.value)} className="h-8 text-sm" />
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="mb-1 block text-sm">Ilmiy rahbar</label>
-                  <Select value={supervisorId || undefined} onValueChange={setSupervisorId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Rahbarni tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(supervisorsQuery.data || []).map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.username}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Step 2 */}
+              {step === 2 && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-medium">{t("wizard.step2")}</h2>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.problem")} *</Label>
+                    <Textarea value={data.problem} onChange={(e) => set("problem", e.target.value)} placeholder="Muammo..." rows={4} className="resize-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.proposal")} *</Label>
+                    <Textarea value={data.proposal} onChange={(e) => set("proposal", e.target.value)} placeholder="Taklif..." rows={4} className="resize-none" />
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="mb-1 block text-sm">Hudud (ixtiyoriy)</label>
-                  <Select value={regionId || "none"} onValueChange={(value) => setRegionId(value === "none" ? "" : value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Hudud tanlang" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Tanlanmagan</SelectItem>
-                      {(regionsQuery.data || []).map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Step 3 */}
+              {step === 3 && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-medium">{t("wizard.step3")}</h2>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.keywords")} *</Label>
+                    <TagInput value={data.keywords} onChange={(tags) => set("keywords", tags)} suggestions={KEYWORD_SUGGESTIONS} placeholder="Kalit so'z kiriting..." />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.annotation")} *</Label>
+                    <Textarea value={data.annotation} onChange={(e) => set("annotation", e.target.value)} placeholder="Annotatsiya..." rows={4} className="resize-none" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.conclusion")}</Label>
+                    <Textarea value={data.conclusion} onChange={(e) => set("conclusion", e.target.value)} placeholder="Xulosa..." rows={3} className="resize-none" />
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="mb-1 block text-sm">Himoya sanasi</label>
-                  <Input type="date" value={defenseDate} onChange={(e) => setDefenseDate(e.target.value)} />
+              {/* Step 4 */}
+              {step === 4 && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-medium">{t("wizard.step4")}</h2>
+                  <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 p-3">
+                    <input type="checkbox" id="selfAuthor" checked={data.author_id === currentUser?.id}
+                      onChange={(e) => {
+                        if (e.target.checked) { set("author_id", currentUser?.id ?? null); setAuthorLabel(currentUser?.username ?? ""); }
+                        else { set("author_id", null); setAuthorLabel(""); }
+                      }} className="rounded" />
+                    <label htmlFor="selfAuthor" className="text-sm cursor-pointer">{t("author.selfSubmit")} ({currentUser?.username})</label>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.author")} *</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={authorLabel} placeholder={t("author.select")} className="flex-1 cursor-pointer bg-muted/30" onClick={() => setAuthorModalOpen(true)} />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setAuthorModalOpen(true)}>Tanlash</Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("dissertation.supervisor")}</Label>
+                    <div className="flex gap-2">
+                      <Input readOnly value={supervisorLabel} placeholder="Rahbar tanlang (ixtiyoriy)" className="flex-1 cursor-pointer bg-muted/30" onClick={() => setSupervisorModalOpen(true)} />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setSupervisorModalOpen(true)}>Tanlash</Button>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="mb-1 block text-sm">Status</label>
-                  <Select value={statusValue} onValueChange={setStatusValue}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">draft</SelectItem>
-                      <SelectItem value="pending">pending</SelectItem>
-                      <SelectItem value="approved">approved</SelectItem>
-                      <SelectItem value="rejected">rejected</SelectItem>
-                      <SelectItem value="defended">defended</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Step 5 */}
+              {step === 5 && (
+                <div className="space-y-4">
+                  <h2 className="text-base font-medium">{t("wizard.step5")}</h2>
+                  <FileUpload value={data.autoreferat_file} onChange={(f) => set("autoreferat_file", f)} label={`📄 ${t("dissertation.autoreferat")} (PDF, DOCX)`} />
+                  <FileUpload value={data.dissertation_pdf_file} onChange={(f) => set("dissertation_pdf_file", f)} label={`📄 ${t("dissertation.dissertationPdf")}`} accept=".pdf" />
+                  <FileUpload value={data.dissertation_word_file} onChange={(f) => set("dissertation_word_file", f)} label={`📄 ${t("dissertation.dissertationWord")}`} accept=".docx,.doc" />
+                  <p className="text-xs text-muted-foreground">Fayllar avtomatik matn ko&apos;rinishiga o&apos;tkaziladi va AI uchun indekslanadi.</p>
                 </div>
+              )}
 
-                <div>
-                  <label className="mb-1 block text-sm">Kategoriya</label>
-                  <Input value={category} onChange={(e) => setCategory(e.target.value)} />
+              {/* Step 6 */}
+              {step === 6 && (
+                <div className="space-y-3">
+                  <h2 className="text-base font-medium">{t("wizard.step6")}</h2>
+                  <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
+                    <Row label={t("dissertation.title")} value={data.title} />
+                    <Row label={t("dissertation.direction")} value={directions.find((d) => d.id === data.scientific_direction_id)?.name_uz ?? "—"} />
+                    <Row label={t("dissertation.university")} value={universities.find((u) => u.id === data.university_id)?.name_uz ?? "—"} />
+                    <Row label={t("dissertation.country")} value={countries.find((c) => c.id === data.country_id)?.name_uz ?? "—"} />
+                    <Row label={t("dissertation.author")} value={authorLabel || "—"} />
+                    <Row label={t("dissertation.supervisor")} value={supervisorLabel || "—"} />
+                    <div>
+                      <span className="text-xs text-muted-foreground">{t("dissertation.keywords")}:</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {data.keywords.map((k) => (
+                          <span key={k} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{k}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border-t border-border/40 pt-2">
+                      <p className="text-xs text-muted-foreground">Fayllar:</p>
+                      <ul className="mt-1 space-y-0.5 text-xs">
+                        <li>Autoreferat: {data.autoreferat_file?.name ?? "Yuklanmagan"}</li>
+                        <li>PDF: {data.dissertation_pdf_file?.name ?? "Yuklanmagan"}</li>
+                        <li>DOCX: {data.dissertation_word_file?.name ?? "Yuklanmagan"}</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="mb-1 block text-sm">Expert rating</label>
-                  <Input type="number" min={0} max={100} step={0.1} value={expertRating} onChange={(e) => setExpertRating(e.target.value)} />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm">Ko&apos;rinish</label>
-                  <Select value={visibility} onValueChange={setVisibility}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="internal">internal</SelectItem>
-                      <SelectItem value="public">public</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm">Kalit so&apos;zlar (vergul bilan)</label>
-                  <Input value={keywords} onChange={(e) => setKeywords(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="grid gap-3">
-                <div>
-                  <label className="mb-1 block text-sm">Dissertatsiya muammosi</label>
-                  <Textarea value={problem} onChange={(e) => setProblem(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm">Dissertatsiya taklifi</label>
-                  <Textarea value={proposal} onChange={(e) => setProposal(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm">Dissertatsiya annotatsiyasi</label>
-                  <Textarea value={annotation} onChange={(e) => setAnnotation(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm">Dissertatsiya xulosasi</label>
-                  <Textarea value={conclusion} onChange={(e) => setConclusion(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm">Avtoreferat matni (alohida)</label>
-                  <Textarea value={autoreferatText} onChange={(e) => setAutoreferatText(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-sm">Avtoreferat fayli</label>
-                  <Input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.txt"
-                    onChange={(e) => setAutoreferatFile(e.target.files?.[0] || null)}
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm">Dissertatsiya PDF fayli</label>
-                  <Input type="file" accept=".pdf" onChange={(e) => setDissertationPdfFile(e.target.files?.[0] || null)} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm">Dissertatsiya Word fayli</label>
-                  <Input
-                    type="file"
-                    accept=".doc,.docx"
-                    onChange={(e) => setDissertationWordFile(e.target.files?.[0] || null)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="submit"
-                  disabled={
-                    createMutation.isPending ||
-                    !title ||
-                    !scientificDirectionId ||
-                    !universityId ||
-                    !problem ||
-                    !proposal ||
-                    !annotation ||
-                    !conclusion
-                  }
-                >
-                  {createMutation.isPending ? "Saqlanmoqda..." : "Saqlash"}
+              {/* Navigation */}
+              <div className="flex items-center justify-between border-t border-border/40 pt-4">
+                <Button variant="outline" size="sm" onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}>
+                  {t("wizard.prev")}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void router.push("/dashboard/dissertations")}>
-                  Bekor qilish
-                </Button>
+                <span className="text-xs text-muted-foreground">{step} / {TOTAL_STEPS}</span>
+                {step < TOTAL_STEPS ? (
+                  <Button size="sm" onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
+                    {t("wizard.next")}
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? "Yuborilmoqda..." : t("wizard.submit")}
+                  </Button>
+                )}
               </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </DashboardLayout>
+            </CardContent>
+          </Card>
+        </div>
+
+        <AuthorSelectModal open={authorModalOpen} onClose={() => setAuthorModalOpen(false)}
+          onSelect={(id, label) => { set("author_id", id); setAuthorLabel(label); }}
+          excludeId={data.supervisor_id ?? undefined} />
+        <AuthorSelectModal open={supervisorModalOpen} onClose={() => setSupervisorModalOpen(false)}
+          onSelect={(id, label) => { set("supervisor_id", id); setSupervisorLabel(label); }}
+          excludeId={data.author_id ?? undefined} />
+      </DashboardLayout>
+    </>
   );
 }

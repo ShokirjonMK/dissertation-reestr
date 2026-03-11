@@ -87,7 +87,7 @@ class UserProfile(Base, TimestampMixin):
     phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     phone_secondary: Mapped[str | None] = mapped_column(String(30), nullable=True)
     passport_file: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    country_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    country_id: Mapped[int | None] = mapped_column(ForeignKey("countries.id"), nullable=True)
     is_foreign: Mapped[bool] = mapped_column(Boolean, default=False)
     region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
     area_id: Mapped[int | None] = mapped_column(ForeignKey("districts.id"), nullable=True)
@@ -95,38 +95,115 @@ class UserProfile(Base, TimestampMixin):
     gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     user: Mapped[User] = relationship("User", back_populates="profile")
+    country: Mapped["Country | None"] = relationship("Country")
+
+
+# ─── Katalog modellari ────────────────────────────────────────────────────────
+
+class Country(Base, TimestampMixin):
+    """Mamlakatlar kataloги — ko'p tilli nomlar + ISO kodi"""
+    __tablename__ = "countries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name_uz: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_ru: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_en: Mapped[str] = mapped_column(String(255), nullable=False)
+    code: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
+
+    regions: Mapped[list["Region"]] = relationship("Region", back_populates="country")
+    universities: Mapped[list["University"]] = relationship("University", back_populates="country")
+
+    def get_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", self.name_uz)
 
 
 class ScientificDirection(Base, TimestampMixin):
+    """Ilmiy yo'nalishlar katalogi — ko'p tilli"""
     __tablename__ = "scientific_directions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    name_uz: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_ru: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    name_en: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    code: Mapped[str] = mapped_column(String(20), nullable=True)
     description: Mapped[str] = mapped_column(Text, default="")
+
+    # Orqaga muvofiqlik uchun (legacy)
+    @property
+    def name(self) -> str:
+        return self.name_uz
+
+    def get_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", self.name_uz) or self.name_uz
 
 
 class University(Base, TimestampMixin):
+    """Universitetlar katalogi — ko'p tilli + mamlakat + region"""
     __tablename__ = "universities"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    name_uz: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_ru: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    name_en: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     short_name: Mapped[str] = mapped_column(String(64), default="")
+    country_id: Mapped[int | None] = mapped_column(ForeignKey("countries.id"), nullable=True)
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
+
+    country: Mapped["Country | None"] = relationship("Country", back_populates="universities")
+    region: Mapped["Region | None"] = relationship("Region")
+
+    # Orqaga muvofiqlik uchun
+    @property
+    def name(self) -> str:
+        return self.name_uz
+
+    def get_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", self.name_uz) or self.name_uz
 
 
 class Region(Base, TimestampMixin):
+    """Regionlar (viloyatlar) katalogi — ko'p tilli + mamlakat"""
     __tablename__ = "regions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    name_uz: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_ru: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    name_en: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    country_id: Mapped[int | None] = mapped_column(ForeignKey("countries.id"), nullable=True)
+
+    country: Mapped["Country | None"] = relationship("Country", back_populates="regions")
+    districts: Mapped[list["District"]] = relationship("District", back_populates="region")
+
+    # Orqaga muvofiqlik
+    @property
+    def name(self) -> str:
+        return self.name_uz
+
+    def get_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", self.name_uz) or self.name_uz
 
 
 class District(Base, TimestampMixin):
+    """Tumanlar katalogi — ko'p tilli"""
     __tablename__ = "districts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_uz: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_ru: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    name_en: Mapped[str] = mapped_column(String(120), nullable=False, default="")
     region_id: Mapped[int] = mapped_column(ForeignKey("regions.id"), nullable=False)
 
+    region: Mapped[Region] = relationship("Region", back_populates="districts")
+
+    @property
+    def name(self) -> str:
+        return self.name_uz
+
+    def get_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", self.name_uz) or self.name_uz
+
+
+# ─── Dissertatsiya modeli ─────────────────────────────────────────────────────
 
 class Dissertation(Base, TimestampMixin):
     __tablename__ = "dissertations"
@@ -138,6 +215,7 @@ class Dissertation(Base, TimestampMixin):
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     supervisor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
+    country_id: Mapped[int | None] = mapped_column(ForeignKey("countries.id"), nullable=True)
     problem: Mapped[str] = mapped_column(Text, nullable=False)
     proposal: Mapped[str] = mapped_column(Text, nullable=False)
     annotation: Mapped[str] = mapped_column(Text, nullable=False)
@@ -154,6 +232,7 @@ class Dissertation(Base, TimestampMixin):
     author: Mapped[User] = relationship("User", foreign_keys=[author_id])
     supervisor: Mapped[User | None] = relationship("User", foreign_keys=[supervisor_id])
     region: Mapped[Region | None] = relationship("Region")
+    country: Mapped["Country | None"] = relationship("Country")
     document: Mapped["DissertationDocument | None"] = relationship(
         "DissertationDocument",
         back_populates="dissertation",
@@ -163,19 +242,34 @@ class Dissertation(Base, TimestampMixin):
 
     @property
     def author_name(self) -> str:
+        if self.author and self.author.profile:
+            parts = filter(None, [
+                self.author.profile.last_name,
+                self.author.profile.first_name,
+                self.author.profile.middle_name,
+            ])
+            full = " ".join(parts)
+            return full if full else self.author.username
         return self.author.username if self.author else ""
 
     @property
     def supervisor_name(self) -> str:
+        if self.supervisor and self.supervisor.profile:
+            parts = filter(None, [
+                self.supervisor.profile.last_name,
+                self.supervisor.profile.first_name,
+            ])
+            full = " ".join(parts)
+            return full if full else self.supervisor.username
         return self.supervisor.username if self.supervisor else ""
 
     @property
     def university_name(self) -> str:
-        return self.university.name if self.university else ""
+        return self.university.name_uz if self.university else ""
 
     @property
     def scientific_direction_name(self) -> str:
-        return self.scientific_direction.name if self.scientific_direction else ""
+        return self.scientific_direction.name_uz if self.scientific_direction else ""
 
     @property
     def autoreferat_text(self) -> str | None:

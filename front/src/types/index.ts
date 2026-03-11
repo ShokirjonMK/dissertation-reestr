@@ -57,6 +57,90 @@ export type CatalogItem = {
   name: string;
 };
 
+// ─── Ko'p tilli katalog turlari ────────────────────────────────────────────────
+
+export type Country = {
+  id: number;
+  name_uz: string;
+  name_ru: string;
+  name_en: string;
+  code: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ScientificDirection = {
+  id: number;
+  name_uz: string;
+  name_ru: string;
+  name_en: string;
+  code?: string | null;
+  description: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type University = {
+  id: number;
+  name_uz: string;
+  name_ru: string;
+  name_en: string;
+  short_name: string;
+  country_id?: number | null;
+  region_id?: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Region = {
+  id: number;
+  name_uz: string;
+  name_ru: string;
+  name_en: string;
+  country_id?: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type District = {
+  id: number;
+  name_uz: string;
+  name_ru: string;
+  name_en: string;
+  region_id: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CountryPayload = Omit<Country, "id" | "created_at" | "updated_at">;
+export type ScientificDirectionPayload = Omit<ScientificDirection, "id" | "created_at" | "updated_at">;
+export type UniversityPayload = Omit<University, "id" | "created_at" | "updated_at">;
+export type RegionPayload = Omit<Region, "id" | "created_at" | "updated_at">;
+export type DistrictPayload = Omit<District, "id" | "created_at" | "updated_at">;
+
+// ─── Dissertation wizard ──────────────────────────────────────────────────────
+
+export type DissertationWizardData = {
+  title: string;
+  scientific_direction_id: number | null;
+  university_id: number | null;
+  country_id: number | null;
+  region_id: number | null;
+  defense_date: string;
+  problem: string;
+  proposal: string;
+  keywords: string[];
+  annotation: string;
+  conclusion: string;
+  author_id: number | null;
+  supervisor_id: number | null;
+  autoreferat_file: File | null;
+  dissertation_pdf_file: File | null;
+  dissertation_word_file: File | null;
+  category: string;
+  visibility: string;
+};
+
 export type UserLookup = {
   id: number;
   username: string;
