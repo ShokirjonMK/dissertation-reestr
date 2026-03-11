@@ -14,7 +14,7 @@ export default function LandingPage() {
         <Card className="w-full max-w-4xl animate-blur-in">
           <CardContent className="space-y-6 p-8">
             <h1 className="word-reveal text-4xl font-medium tracking-tight sm:text-5xl">
-              <span>Dissertation</span> <span>Problems</span> <span>&</span> <span>Proposals Registry</span>
+              <span>Dissertatsiya</span> <span>Muammolari</span> <span>va</span> <span>Maqsadlarini reestri</span>
             </h1>
             <p className="max-w-3xl text-base text-muted-foreground">
               Markazlashgan reestr: doktorantlar tomonidan kiritilgan muammo va takliflar, ekspertlar ko&apos;rib chiqishi,
