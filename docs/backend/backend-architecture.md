@@ -1,27 +1,196 @@
-﻿# Backend Architecture
+# Backend Arxitekturasi
 
-## Stack
-- FastAPI
-- SQLAlchemy ORM
-- Pydantic v2
-- JWT auth
+**Texnologiya:** FastAPI (Python 3.13+)
+**Port:** 8000
+**Swagger UI:** http://localhost:8000/docs
 
-## Layering
-- `api/`: route handlers
-- `schemas/`: request/response contracts
-- `models/`: SQLAlchemy entities
-- `repositories/`: DB query layer
-- `services/`: business logic, indexing hooks, seed
-- `integrations/`: external connectors (OneID, HR, Passport)
-- `core/`: config, security, DB session
+---
 
-## Startup
-`app.main`:
-1. Creates tables (`Base.metadata.create_all`).
-2. Registers routers.
-3. Runs `bootstrap_defaults()` for seed data.
+## Qatlamli arxitektura
 
-## Security
-- OAuth2 bearer token.
-- JWT subject = user id.
-- RBAC with `require_roles(...)` dependency.
+```
+HTTP so'rov
+    ↓
+api/ (Route handlers)
+    ↓
+schemas/ (Validatsiya - Pydantic)
+    ↓
+services/ (Biznes logika)
+    ↓
+repositories/ (Ma'lumotlar bazasi so'rovlari)
+    ↓
+models/ (SQLAlchemy ORM)
+    ↓
+PostgreSQL
+```
+
+---
+
+## Papka tuzilishi
+
+```
+back/app/
+├── main.py              # FastAPI app, middleware, routerlar
+├── api/
+│   ├── health.py        # GET /health
+│   ├── auth.py          # Login, /me, OneID callback
+│   ├── users.py         # Foydalanuvchilar CRUD
+│   ├── catalogs.py      # Yo'nalishlar, universitetlar, regionlar
+│   ├── dissertations.py # Dissertatsiyalar CRUD + moderatsiya
+│   ├── search.py        # Qidiruv va AI so'rovlari
+│   └── deps.py          # Dependency injection
+│
+├── schemas/
+│   ├── auth.py          # LoginRequest, TokenResponse
+│   ├── user.py          # UserCreate, UserRead
+│   ├── dissertation.py  # DissertationCreate, DissertationRead, ...
+│   ├── catalogs.py      # ScientificDirectionCreate, ...
+│   └── search.py        # SearchRequest, AskRequest
+│
+├── models/
+│   └── entities.py      # Barcha SQLAlchemy modellari
+│
+├── repositories/
+│   ├── dissertation_repository.py
+│   ├── user_repository.py
+│   └── catalog_repository.py
+│
+├── services/
+│   ├── auth_service.py              # authenticate_user, register_user
+│   ├── dissertation_service.py      # create, update, list
+│   ├── dissertation_document_service.py  # Fayl yuklash/saqlash
+│   ├── reindex_service.py           # Elasticsearch sinxronizatsiya
+│   ├── search_sync_service.py       # Search va AI servislarga proxy
+│   └── seed_service.py              # bootstrap_defaults()
+│
+├── integrations/
+│   ├── oneid_client.py              # OneID OAuth (stub)
+│   ├── hr_client.py                 # HR sistema (stub)
+│   └── passport_client.py           # Pasport tekshiruvi (stub)
+│
+└── core/
+    ├── config.py                    # Pydantic Settings (.env)
+    ├── database.py                  # SQLAlchemy engine, SessionLocal
+    └── security.py                  # JWT, bcrypt
+```
+
+---
+
+## Ishga tushish jarayoni
+
+```python
+# main.py
+Base.metadata.create_all(bind=engine)  # Jadvallar yaratish
+
+@app.on_event("startup")
+def on_startup():
+    bootstrap_defaults()           # Seed data
+    sync_dissertations_to_search() # Elasticsearch indekslash
+```
+
+---
+
+## API routerlar
+
+| Router | Prefix | Tags |
+|--------|--------|------|
+| health | `/api/v1` | health |
+| auth | `/api/v1/auth` | auth |
+| users | `/api/v1/users` | users |
+| catalogs | `/api/v1/catalogs` | catalogs |
+| dissertations | `/api/v1/dissertations` | dissertations |
+| search | `/api/v1` | search-ai |
+
+---
+
+## Dependency Injection
+
+### get_db_dep
+```python
+def get_db_dep():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+```
+
+### get_current_user
+```python
+def get_current_user(token: str = Depends(oauth2_scheme), db = Depends(get_db_dep)):
+    # JWT decode → user_id → DB lookup
+    return user
+```
+
+### require_roles
+```python
+def require_roles(*roles: RoleName):
+    def checker(user = Depends(get_current_user)):
+        if user.role.name not in roles:
+            raise HTTPException(403, "Insufficient permissions")
+        return user
+    return checker
+```
+
+---
+
+## CORS konfiguratsiya
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+---
+
+## Sozlamalar (core/config.py)
+
+```python
+class Settings(BaseSettings):
+    db_url: str
+    redis_url: str
+    elastic_url: str
+    jwt_secret: str
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 120
+    file_storage_path: str = "/app/storage"
+    ai_service_url: str
+    search_service_url: str
+    integration_service_url: str
+    cors_origins: list[str]
+
+    class Config:
+        env_file = ".env"
+```
+
+---
+
+## Fayl saqlash
+
+```python
+# DissertationDocumentService
+class DissertationDocumentService:
+    def __init__(self, storage_path: Path):
+        self.storage_path = storage_path
+
+    def save_file(self, dissertation_id, file, prefix):
+        # {storage_path}/dissertations/{id}/{prefix}_{uuid}.ext
+        ...
+```
+
+---
+
+## Xatolarni qayta ishlash
+
+FastAPI avtomatik `422 Unprocessable Entity` qaytaradi Pydantic validatsiya xatosi bo'lganda.
+
+Qo'lda `HTTPException` ishlatiladigan holatlar:
+- `404`: Topilmadi
+- `400`: Noto'g'ri kirish
+- `403`: Ruxsat yo'q
+- `401`: Token yo'q/noto'g'ri

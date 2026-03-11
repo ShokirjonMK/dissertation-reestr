@@ -35,6 +35,8 @@ services:
   frontend:
     build:
       context: ./front
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     container_name: dissertation-frontend
     env_file:
       - .env

@@ -1,23 +1,154 @@
-﻿# Search Service
+# Search Service
 
-## Purpose
-ElasticSearch gateway for dissertation corpus search.
+**Port:** 8001
+**Texnologiya:** FastAPI + Elasticsearch 8.13
+**Papka:** `services/search-service/`
 
-## Endpoints
-- `GET /health`
-- `POST /index/dissertation`
-- `POST /search`
+---
 
-## Search Features
-- full text search
-- context-style phrase match
-- synonym analyzer (`uz_synonyms`)
-- typo tolerance (`fuzziness: AUTO`)
+## Maqsad
 
-## Indexed Fields
-- main text: title/problem/proposal/annotation/conclusion/keywords
-- people/context: author_name/supervisor_name/university_name/scientific_direction_name
-- filters: status/category/visibility/expert_rating/ids/date
+Elasticsearch orqali dissertatsiyalarni to'liq matnli qidirish imkoniyatini taqdim etadi. Backend `search-service` ga HTTP so'rovlar orqali murojaat qiladi.
 
-## Resilience
-If ElasticSearch is unavailable, in-memory fallback index is used for minimal continuity.
+---
+
+## Endpointlar
+
+### GET /health
+Servis sog'lig'ini tekshirish.
+```json
+{ "ok": true }
+```
+
+### POST /index/dissertation
+Dissertatsiyani Elasticsearch'ga indekslash.
+
+**Request:**
+```json
+{
+  "id": 1,
+  "title": "Dissertatsiya nomi",
+  "problem": "...",
+  "proposal": "...",
+  "annotation": "...",
+  "conclusion": "...",
+  "keywords": ["kalit1", "kalit2"],
+  "autoreferat_text": null,
+  "dissertation_word_text": null,
+  "status": "approved",
+  "category": "civil",
+  "expert_rating": 86.0,
+  "visibility": "internal",
+  "scientific_direction_id": 1,
+  "scientific_direction_name": "Civil Law",
+  "university_id": 1,
+  "university_name": "TSUL",
+  "author_id": 2,
+  "author_name": "doctorant",
+  "supervisor_id": 3,
+  "supervisor_name": "supervisor",
+  "region_id": 1,
+  "defense_date": "2026-07-01"
+}
+```
+
+**Response:**
+```json
+{ "indexed": true }
+```
+
+### POST /search
+To'liq matnli qidiruv.
+
+**Request:**
+```json
+{
+  "query": "raqamlashtirish",
+  "filters": {
+    "status": "approved",
+    "visibility": "internal"
+  },
+  "size": 20
+}
+```
+
+**Response:**
+```json
+{
+  "hits": [
+    {
+      "id": "1",
+      "score": 1.5,
+      "source": { ...dissertation fields... }
+    }
+  ],
+  "total": 5
+}
+```
+
+---
+
+## Qidiruv xususiyatlari
+
+### To'liq matnli qidiruv
+Quyidagi maydonlarda ishlaydi:
+- `title` (og'irlik: 3)
+- `problem` (og'irlik: 2)
+- `proposal` (og'irlik: 2)
+- `annotation` (og'irlik: 1.5)
+- `conclusion` (og'irlik: 1.5)
+- `keywords` (og'irlik: 2)
+- `autoreferat_text` (og'irlik: 1)
+- `dissertation_word_text` (og'irlik: 1)
+- `author_name`, `supervisor_name`, `university_name` (og'irlik: 1)
+
+### Fuzzy (xato-tolerant) qidiruv
+```python
+fuzziness: "AUTO"
+```
+Imloviy xatolarga chidamli.
+
+### Sinonim qidiruv
+Elasticsearch `uz_synonyms` analyzer tayyorlangan.
+
+### Kontekst qidiruv
+`phrase` va `best_fields` tipidagi so'rovlar kombinatsiyasi.
+
+---
+
+## Elasticsearch indeksi
+
+Indeks nomi: `dissertations`
+
+**Mapping asosiy maydonlar:**
+```json
+{
+  "title": { "type": "text", "analyzer": "standard" },
+  "problem": { "type": "text" },
+  "proposal": { "type": "text" },
+  "status": { "type": "keyword" },
+  "expert_rating": { "type": "float" },
+  "visibility": { "type": "keyword" },
+  "defense_date": { "type": "date" }
+}
+```
+
+---
+
+## Ishonchliligi (Resilience)
+
+Agar Elasticsearch mavjud bo'lmasa, servis xotirada minimal indeks saqlaydi va oddiy qidiruv natijasini qaytaradi. Bu servisning ishga tushishiga imkon beradi.
+
+---
+
+## Backend bilan integratsiya
+
+Backend startup'da barcha dissertatsiyalarni sinxronlashtiradi:
+
+```python
+# back/app/services/reindex_service.py
+def sync_dissertations_to_search():
+    # Barcha dissertatsiyalarni Elasticsearch'ga indekslaydi
+```
+
+Yangi dissertatsiya yaratilganda yoki yangilanganda ham indekslash chaqiriladi.
