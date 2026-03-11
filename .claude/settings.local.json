@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/OSPanel/domains/dissertation-reestr -not -path */.git/* -type f)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
