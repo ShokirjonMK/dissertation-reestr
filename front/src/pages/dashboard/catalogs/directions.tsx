@@ -130,9 +130,9 @@ export default function DirectionsPage() {
             columns={columns}
             data={directions}
             loading={isLoading}
-            onAdd={(v) => addMut.mutateAsync(v as ScientificDirectionPayload)}
-            onEdit={(id, v) => editMut.mutateAsync({ id, payload: v as ScientificDirectionPayload })}
-            onDelete={(id) => deleteMut.mutateAsync(id)}
+            onAdd={(v) => void addMut.mutateAsync(v as ScientificDirectionPayload)}
+            onEdit={(id, v) => void editMut.mutateAsync({ id, payload: v as ScientificDirectionPayload })}
+            onDelete={(id) => void deleteMut.mutateAsync(id)}
             renderForm={renderForm}
             initialValues={INITIAL}
             searchFields={["name_uz", "name_ru", "name_en", "code"]}

@@ -135,9 +135,9 @@ export default function RegionsPage() {
             columns={columns}
             data={regions}
             loading={isLoading}
-            onAdd={(v) => addMut.mutateAsync(v as RegionPayload)}
-            onEdit={(id, v) => editMut.mutateAsync({ id, payload: v as RegionPayload })}
-            onDelete={(id) => deleteMut.mutateAsync(id)}
+            onAdd={(v) => void addMut.mutateAsync(v as RegionPayload)}
+            onEdit={(id, v) => void editMut.mutateAsync({ id, payload: v as RegionPayload })}
+            onDelete={(id) => void deleteMut.mutateAsync(id)}
             renderForm={renderForm}
             initialValues={INITIAL}
             searchFields={["name_uz", "name_ru", "name_en"]}

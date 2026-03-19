@@ -187,9 +187,9 @@ export default function UniversitiesPage() {
             columns={columns}
             data={universities}
             loading={isLoading}
-            onAdd={(v) => addMut.mutateAsync(v as UniversityPayload)}
-            onEdit={(id, v) => editMut.mutateAsync({ id, payload: v as UniversityPayload })}
-            onDelete={(id) => deleteMut.mutateAsync(id)}
+            onAdd={(v) => void addMut.mutateAsync(v as UniversityPayload)}
+            onEdit={(id, v) => void editMut.mutateAsync({ id, payload: v as UniversityPayload })}
+            onDelete={(id) => void deleteMut.mutateAsync(id)}
             renderForm={renderForm}
             initialValues={INITIAL}
             searchFields={["name_uz", "name_ru", "name_en", "short_name"]}
