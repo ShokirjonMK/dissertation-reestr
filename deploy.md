@@ -136,7 +136,20 @@ cd /opt/dissertation-reestr && git pull origin main
 
 ---
 
-### Qadam 6: Docker Compose Build va Start
+### Qadam 6: CORS Konfiguratsiyasi
+
+`config.py` da CORS faqat `localhost` uchun sozlangan edi, production IP qo'shildi:
+
+```bash
+echo 'CORS_ORIGINS=["http://86.48.3.80:3000","http://localhost:3000","http://127.0.0.1:3000","http://localhost:3001"]' >> /opt/dissertation-reestr/.env
+
+# .env yangilanishi uchun container qayta yaratildi (restart yetmaydi):
+cd /opt/dissertation-reestr && docker compose up -d backend
+```
+
+---
+
+### Qadam 7: Docker Compose Build va Start
 
 ```bash
 cd /opt/dissertation-reestr
