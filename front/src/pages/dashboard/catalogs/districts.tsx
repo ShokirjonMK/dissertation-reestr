@@ -134,9 +134,9 @@ export default function DistrictsPage() {
             columns={columns}
             data={districts}
             loading={isLoading}
-            onAdd={(v) => void addMut.mutateAsync(v as DistrictPayload)}
-            onEdit={(id, v) => void editMut.mutateAsync({ id, payload: v as DistrictPayload })}
-            onDelete={(id) => void deleteMut.mutateAsync(id)}
+            onAdd={(v) => addMut.mutateAsync(v as DistrictPayload)}
+            onEdit={(id, v) => editMut.mutateAsync({ id, payload: v as DistrictPayload })}
+            onDelete={(id) => deleteMut.mutateAsync(id)}
             renderForm={renderForm}
             initialValues={INITIAL}
             searchFields={["name_uz", "name_ru", "name_en"]}

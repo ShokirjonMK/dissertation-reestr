@@ -117,9 +117,9 @@ export default function CountriesPage() {
             columns={columns}
             data={countries}
             loading={isLoading}
-            onAdd={(values) => void addMut.mutateAsync(values as CountryPayload)}
-            onEdit={(id, values) => void editMut.mutateAsync({ id, payload: values as CountryPayload })}
-            onDelete={(id) => void deleteMut.mutateAsync(id)}
+            onAdd={(values) => addMut.mutateAsync(values as CountryPayload)}
+            onEdit={(id, values) => editMut.mutateAsync({ id, payload: values as CountryPayload })}
+            onDelete={(id) => deleteMut.mutateAsync(id)}
             renderForm={renderForm}
             initialValues={INITIAL}
             searchFields={["name_uz", "name_ru", "name_en", "code"]}

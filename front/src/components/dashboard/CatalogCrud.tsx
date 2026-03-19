@@ -41,9 +41,9 @@ type CatalogCrudProps<T extends { id: number }> = {
   columns: CatalogColumn<T>[];
   data: T[];
   loading?: boolean;
-  onAdd: (values: Omit<T, "id" | "created_at" | "updated_at">) => Promise<void>;
-  onEdit: (id: number, values: Omit<T, "id" | "created_at" | "updated_at">) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
+  onAdd: (values: Omit<T, "id" | "created_at" | "updated_at">) => Promise<unknown>;
+  onEdit: (id: number, values: Omit<T, "id" | "created_at" | "updated_at">) => Promise<unknown>;
+  onDelete: (id: number) => Promise<unknown>;
   renderForm: (
     values: Partial<T>,
     onChange: (key: keyof T, value: unknown) => void
