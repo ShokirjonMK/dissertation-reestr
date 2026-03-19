@@ -20,7 +20,7 @@ type Message = {
   references?: Array<{ id: string; source: Record<string, string> }>;
 };
 
-export default function AIAssistantChat() {
+export default function AIAssistantChat({ fullPage = false }: { fullPage?: boolean }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
 
@@ -70,7 +70,7 @@ export default function AIAssistantChat() {
         <CardDescription>ChatGPT-style dialog: messages, prompts, references.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid gap-2 rounded-lg border border-border/60 bg-white/40 p-3 dark:bg-slate-900/30">
+        <div className={`grid gap-2 rounded-lg border border-border/60 bg-white/40 p-3 dark:bg-slate-900/30 overflow-y-auto ${fullPage ? "min-h-[400px] max-h-[60vh]" : ""}`}>
           {messages.length === 0 && emptyHint}
           {messages.map((message) => (
             <div
