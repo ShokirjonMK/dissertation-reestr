@@ -6,7 +6,14 @@
       "Bash(git commit:*)",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\(''''dependencies'''',{}\\), **d.get\\(''''devDependencies'''',{}\\)}, indent=2\\)\\)\")",
       "Bash(cat c:/OSPanel/domains/dissertation-reestr/front/src/services/*.ts)",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''@radix-ui/react-label'''' in d.get\\(''''dependencies'''', {}\\)\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''@radix-ui/react-label'''' in d.get\\(''''dependencies'''', {}\\)\\)\")",
+      "Bash(apt-get install:*)",
+      "Bash(choco install:*)",
+      "Bash(python -c \"import paramiko; print\\(''paramiko ok''\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(sed -i 's/onAdd={\\(values\\) => void addMut/onAdd={\\(values\\) => addMut/g; s/onEdit={\\(id, values\\) => void editMut/onEdit={\\(id, values\\) => editMut/g; s/onDelete={\\(id\\) => void deleteMut/onDelete={\\(id\\) => deleteMut/g' \"C:/OSPanel/domains/dissertation-reestr/front/src/pages/dashboard/catalogs/countries.tsx\")",
+      "Bash(__NEW_LINE_f8a1e3a0299a4950__ sed:*)"
     ]
   }
 }
