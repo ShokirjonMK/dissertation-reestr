@@ -37,7 +37,9 @@ back/app/
 │   ├── users.py         # Foydalanuvchilar CRUD
 │   ├── catalogs.py      # Yo'nalishlar, universitetlar, regionlar
 │   ├── dissertations.py # Dissertatsiyalar CRUD + moderatsiya
-│   ├── search.py        # Qidiruv va AI so'rovlari
+│   ├── dissertation_content.py  # Strukturalangan muammo/takliflar + extract
+│   ├── implementation_proposals.py  # Amaliyot takliflari API
+│   ├── search.py        # Qidiruv, AI, problems-proposals qidiruvi
 │   └── deps.py          # Dependency injection
 │
 ├── schemas/
@@ -45,10 +47,17 @@ back/app/
 │   ├── user.py          # UserCreate, UserRead
 │   ├── dissertation.py  # DissertationCreate, DissertationRead, ...
 │   ├── catalogs.py      # ScientificDirectionCreate, ...
-│   └── search.py        # SearchRequest, AskRequest
+│   ├── search.py        # SearchRequest, AskRequest
+│   ├── dissertation_content.py
+│   └── implementation_proposal.py
 │
 ├── models/
-│   └── entities.py      # Barcha SQLAlchemy modellari
+│   ├── entities.py      # Asosiy ORM (User, Dissertation, ...)
+│   ├── dissertation_content.py   # DissertationProblem, DissertationProposalContent
+│   └── implementation_proposal.py  # ImplementationProposal, ProposalStatusHistory
+│
+├── ai/
+│   └── extractor.py     # PDF/DOCX matn + AI extract chaqiruvi
 │
 ├── repositories/
 │   ├── dissertation_repository.py
@@ -61,6 +70,8 @@ back/app/
 │   ├── dissertation_document_service.py  # Fayl yuklash/saqlash
 │   ├── reindex_service.py           # Elasticsearch sinxronizatsiya
 │   ├── search_sync_service.py       # Search va AI servislarga proxy
+│   ├── dissertation_content_service.py
+│   ├── implementation_proposal_service.py
 │   └── seed_service.py              # bootstrap_defaults()
 │
 ├── integrations/

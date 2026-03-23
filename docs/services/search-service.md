@@ -48,7 +48,13 @@ Dissertatsiyani Elasticsearch'ga indekslash.
   "supervisor_id": 3,
   "supervisor_name": "supervisor",
   "region_id": 1,
-  "defense_date": "2026-07-01"
+  "defense_date": "2026-07-01",
+  "problems": [
+    { "order_num": 1, "problem_text": "...", "source_page": "12" }
+  ],
+  "proposal_contents": [
+    { "order_num": 1, "proposal_text": "...", "source_page": "45" }
+  ]
 }
 ```
 
@@ -85,6 +91,27 @@ To'liq matnli qidiruv.
   "total": 5
 }
 ```
+
+### GET /search/problems-proposals
+Strukturalangan `problems` va `proposal_contents` nested maydonlarida qidiruv.
+
+**Query parametrlari:**
+
+| Parametr | Tavsif |
+|----------|---------|
+| `q` | Qidiruv matni (min 2 belgi) |
+| `type` | `problems` \| `proposals` \| `both` (default: both) |
+| `field` | Ilmiy yo'nalish bo'yicha matn filtri |
+| `year_from`, `year_to` | Himoya sanasi yil oralig'i (`defense_date`) |
+| `degree` | `category` ustuniga term |
+| `university_id` | Butun son (string sifatida ham yuboriladi) |
+| `page`, `size` | Sahifalash |
+
+**Javob:** `items` (dissertatsiya qisqacha + `matched_problems`, `matched_proposals` highlight bilan), `total`, `page`, `size`, `pages`, `query`.
+
+Indeks hujjatida `problems` va `proposal_contents` massivlari bo'lishi kerak (backend indekslashda qo'shiladi).
+
+Modul hujjati: [Dissertation problems & proposals](../modules/dissertation-problems-proposals/README.md).
 
 ---
 

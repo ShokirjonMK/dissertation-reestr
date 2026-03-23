@@ -7,9 +7,17 @@
 /login               → Login forma (ochiq)
 /dashboard           → Bosh dashboard (himoyalangan)
 /dashboard/dissertations      → Dissertatsiyalar ro'yxati
-/dashboard/dissertations/[id] → Dissertatsiya tafsiloti
+/dashboard/dissertations/[id] → Dissertatsiya tafsiloti (+ muammo/takliflar editori)
 /dashboard/dissertations/new  → Yangi dissertatsiya
+/dashboard/proposals          → Mening takliflarim (employee / moderator / admin)
+/dashboard/proposals/new      → Yangi amaliyot taklifi
+/dashboard/proposals/[id]     → Taklif tafsiloti va moderatsiya
+/dashboard/admin/proposals    → Barcha / kutilayotgan takliflar (moderator / admin)
+/dashboard/search/problems    → Muammo va takliflar bo'yicha qidiruv
 /dashboard/users     → Foydalanuvchilar (Admin)
+/dashboard/ai        → AI yordamchi
+/dashboard/settings  → Sozlamalar
+/dashboard/catalogs/* → Kataloglar (admin)
 ```
 
 ---
@@ -90,9 +98,32 @@ Dashboard → AI Assistant tab
   ↓
 Savol yoziladi
   ↓
-POST /api/v1/ask → AI Service
+POST /api/v1/ai/ask → AI Service
   ↓
 Javob + manbalar ko'rsatiladi
+```
+
+### 8. Strukturalangan muammolar va takliflar
+```
+/dashboard/dissertations/{id} → ProblemsProposalsEditor
+  ↓
+GET .../problems va .../proposal-contents (TanStack Query)
+  ↓
+Fayl yuklash → POST .../extract-problems-proposals
+  ↓
+Saqlash → POST .../problems/bulk va .../proposal-contents/bulk
+```
+
+### 9. Amaliyot takliflari
+```
+/dashboard/proposals/new → forma → POST /api/v1/proposals/
+  ↓
+/dashboard/proposals/{id} → POST submit / approve / reject / ...
+```
+
+### 10. Muammo/taklif qidiruvi
+```
+/dashboard/search/problems → GET /api/v1/search/problems-proposals?q=...
 ```
 
 ---

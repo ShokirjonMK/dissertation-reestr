@@ -130,6 +130,47 @@ Dissertatsiyani o'chirish.
 
 ---
 
+## Dissertatsiya: strukturalangan muammolar va takliflar
+
+Marshrutlar barchasi `/api/v1/dissertations/{dissertation_id}/...` ostida, JWT talab qiladi.
+
+| Usul | Yo'l | Tavsif |
+|------|------|--------|
+| POST | `.../problems` | Bitta muammo qo'shish |
+| GET | `.../problems` | Muammolar ro'yxati |
+| POST | `.../problems/bulk` | Ommaviy saqlash (`problems[]`, `replace_existing`) |
+| DELETE | `.../problems/{problem_id}` | O'chirish (204) |
+| POST | `.../proposal-contents` | Bitta taklif qatori |
+| GET | `.../proposal-contents` | Takliflar ro'yxati |
+| POST | `.../proposal-contents/bulk` | Ommaviy saqlash |
+| DELETE | `.../proposal-contents/{proposal_id}` | O'chirish (204) |
+| POST | `.../extract-problems-proposals` | Multipart `file` — PDF/Word + AI ajratish |
+
+Batafsil: [Dissertation problems & proposals moduli](../modules/dissertation-problems-proposals/README.md).
+
+---
+
+## Amaliyotga joriy etish takliflari (`/proposals`)
+
+| Usul | Yo'l | Ruxsat (asosan) |
+|------|------|-----------------|
+| POST | `/proposals/` | Admin, Moderator, Employee |
+| GET | `/proposals/my` | Joriy user (query: `status`, `page`, `size`) |
+| GET | `/proposals/pending` | Moderator, Admin |
+| GET | `/proposals/` | Moderator, Admin |
+| GET | `/proposals/{id}` | Egasi yoki Moderator/Admin |
+| PUT | `/proposals/{id}` | Tahrir qoidalari bo'yicha |
+| POST | `/proposals/{id}/submit` | Yuborish |
+| POST | `/proposals/{id}/start-review` | Moderator, Admin |
+| POST | `/proposals/{id}/approve` | Body: `{ "comment": null \| string }` |
+| POST | `/proposals/{id}/reject` | Body: `{ "comment": "..." }` (min 10 belgi) |
+| POST | `/proposals/{id}/request-revision` | Body: `{ "revision_notes": "..." }` |
+| POST | `/proposals/{id}/resubmit` | Qayta yuborish |
+
+Batafsil: [Implementation proposals moduli](../modules/implementation-proposals/README.md).
+
+---
+
 ## Foydalanuvchilar
 
 ### GET /users/
@@ -183,11 +224,16 @@ Elasticsearch orqali to'liq matnli qidiruv.
 }
 ```
 
-### POST /ask
-AI asosida savol-javob.
+### GET /search/problems-proposals
+Dissertatsiya ichidagi **strukturalangan** `problems` va `proposal_contents` maydonlari bo'yicha qidiruv (search-service proksi).
+
+**Query parametrlari:** `q` (min 2 belgi), `type` = `problems` \| `proposals` \| `both`, `field`, `year_from`, `year_to`, `degree`, `university_id`, `page`, `size`.
+
+### POST /ai/ask
+AI asosida savol-javob (RAG uslubida search-service orqali).
 
 ```json
-{ "question": "Mediatsiya bo'yicha qanday tadqiqotlar bor?" }
+{ "question": "Mediatsiya bo'yicha qanday tadqiqotlar bor?", "top_k": 5 }
 ```
 
 ---

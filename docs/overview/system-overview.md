@@ -320,6 +320,11 @@ Tezkor kesh va navbat boshqaruvi.
 - Mualliflar faoliyati statistikasi
 - PDF/Excel formatida eksport
 
+### 6.7 Amaliyotga joriy etish va strukturalangan muammo/takliflar (2026)
+
+- **Implementation proposals** — dissertatsiyaga bog'langan alohida taklif hujjati, status oqimi va moderator tasdiqi. Texnik hujjat: [`docs/modules/implementation-proposals/README.md`](../modules/implementation-proposals/README.md).
+- **Strukturalangan muammolar va takliflar** — bir dissertatsiya uchun ko'p qatorli ro'yxatlar, PDF/Word dan AI yordamida ajratish, Elasticsearch bo'yicha maxsus qidiruv. [`docs/modules/dissertation-problems-proposals/README.md`](../modules/dissertation-problems-proposals/README.md).
+
 ---
 
 ## 7. Ma'lumot Oqimi

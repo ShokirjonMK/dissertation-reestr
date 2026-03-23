@@ -7,10 +7,20 @@ roles ──────── users ──────────── user_p
   1:N            │ 1:N
                  │
          dissertations ─── dissertation_documents
-              │
+              │  │  │
+              │  │  ├── dissertation_problems (1:N)
+              │  │  ├── dissertation_proposals (1:N, strukturalangan takliflar)
+              │  │  └── implementation_proposals (1:N)
+              │  │
         ┌─────┴──────┬──────┬──────────┐
         │            │      │          │
 scientific_directions  universities  regions ── districts
+
+implementation_proposals ─── proposal_status_history (1:N)
+         │
+       users (proposed_by, reviewed_by)
+
+proposal_status_history ── users (changed_by)
 ```
 
 ---
@@ -104,6 +114,7 @@ scientific_directions  universities  regions ── districts
 | author_id | FK → users.id | Muallif |
 | supervisor_id | FK → users.id NULLABLE | Ilmiy rahbar |
 | region_id | FK → regions.id NULLABLE | Region |
+| country_id | FK → countries.id NULLABLE | Mamlakat |
 | problem | TEXT | Dissertatsiya muammosi |
 | proposal | TEXT | Dissertatsiya taklifi |
 | annotation | TEXT | Annotatsiya |
@@ -130,6 +141,68 @@ scientific_directions  universities  regions ── districts
 | dissertation_word_file_path | VARCHAR(500) | Word yo'li |
 | dissertation_word_file_name | VARCHAR(255) | Word fayl nomi |
 | dissertation_word_text | TEXT | Word matni (extract qilingan) |
+
+### `dissertation_problems`
+Strukturalangan muammolar ro'yxati (dissertatsiya bo'yicha ko'p qator).
+
+| Ustun | Tur | Tavsif |
+|-------|-----|--------|
+| id | INTEGER PK | |
+| dissertation_id | FK → dissertations.id ON DELETE CASCADE | |
+| order_num | INTEGER | Tartib |
+| problem_text | TEXT | Matn |
+| problem_category | TEXT NULL | Kategoriya |
+| source_page | TEXT NULL | Sahifa / manba |
+| is_auto_extracted | BOOLEAN | AI bilan to'ldirilganmi |
+| created_at | DATETIME | |
+
+### `dissertation_proposals`
+Strukturalangan takliflar ro'yxati (**jadval nomi**; dissertatsiya `proposal` TEXT maydonidan mustaqil).
+
+| Ustun | Tur | Tavsif |
+|-------|-----|--------|
+| id | INTEGER PK | |
+| dissertation_id | FK → dissertations.id ON DELETE CASCADE | |
+| order_num | INTEGER | Tartib |
+| proposal_text | TEXT | Matn |
+| proposal_category | TEXT NULL | |
+| source_page | TEXT NULL | |
+| is_auto_extracted | BOOLEAN | |
+| created_at | DATETIME | |
+
+### `implementation_proposals`
+Amaliyotga joriy etish bo'yicha alohida taklif hujjati.
+
+| Ustun | Tur | Tavsif |
+|-------|-----|--------|
+| id | INTEGER PK | |
+| dissertation_id | FK → dissertations.id ON DELETE CASCADE | |
+| proposed_by | FK → users.id | Muallif |
+| reviewed_by | FK → users.id NULL | Ko'rib chiqqan |
+| title | TEXT | Sarlavha |
+| problem_description | TEXT | |
+| proposal_text | TEXT | |
+| expected_result | TEXT | |
+| implementation_area, implementation_org | TEXT | |
+| priority | ENUM | low, medium, high, critical |
+| source_chapter, source_pages | TEXT NULL | |
+| status | ENUM | draft, submitted, under_review, approved, rejected, revision_required |
+| submitted_at, reviewed_at | DATETIME NULL | |
+| deadline | DATE NULL | |
+| reviewer_comment, revision_notes, internal_notes | TEXT NULL | |
+| attachment_url | TEXT NULL | |
+| created_at, updated_at | DATETIME | |
+
+### `proposal_status_history`
+| Ustun | Tur | Tavsif |
+|-------|-----|--------|
+| id | INTEGER PK | |
+| proposal_id | FK → implementation_proposals.id ON DELETE CASCADE | |
+| changed_by | FK → users.id | |
+| from_status | ENUM NULL | Oldingi status |
+| to_status | ENUM | Yangi status |
+| comment | TEXT NULL | |
+| changed_at | DATETIME | |
 
 ---
 

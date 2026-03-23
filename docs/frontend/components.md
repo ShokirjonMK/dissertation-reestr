@@ -170,3 +170,25 @@ Barcha provayderlarni o'rab oladi:
 - `QueryClientProvider` (TanStack Query)
 - `ThemeProvider` (Dark mode)
 - `Toaster` (Toast bildirishtiruvlar)
+
+---
+
+## Takliflar va qidiruv (2026)
+
+### ProposalStatusBadge
+**Fayl:** `src/components/proposals/ProposalStatusBadge.tsx`  
+Taklif statusi uchun rangli badge (`draft`, `submitted`, `under_review`, …).
+
+### StatusHistoryTimeline
+**Fayl:** `src/components/proposals/StatusHistoryTimeline.tsx`  
+`proposal_status_history` uchun vertikal vaqt chizig'i.
+
+### ProblemsProposalsEditor
+**Fayl:** `src/components/problems-proposals/ProblemsProposalsEditor.tsx`  
+Dissertatsiya sahifasida muammo/taklif qatorlari, fayldan AI ajratish, bulk saqlash (`API_BASE_URL` + `buildAuthHeaders`).
+
+### SimpleProblemSearch
+**Fayl:** `src/components/search/SimpleProblemSearch.tsx`  
+`GET /api/v1/search/problems-proposals` orqali qidiruv va natija kartochkalari.
+
+Modul hujjatlari: [implementation-proposals](../../modules/implementation-proposals/README.md), [dissertation-problems-proposals](../../modules/dissertation-problems-proposals/README.md).

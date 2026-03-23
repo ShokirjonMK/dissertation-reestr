@@ -61,11 +61,32 @@ AI asosida savol-javob.
 }
 ```
 
+### POST /extract
+Dissertatsiya matnidan muammo va takliflarni JSON ko'rinishida ajratish uchun **prompt** yuboriladi. Backend `extractor` fayldan matn olib, ushbu endpointga murojaat qiladi.
+
+**Request:**
+```json
+{
+  "prompt": "Quyidagi matndan FAQAT muammolar va takliflarni JSON qilib ber..."
+}
+```
+
+**Response:**
+```json
+{
+  "text": "{\"problems\": [...], \"proposals\": [...]}"
+}
+```
+
+`text` ichidagi JSON keyin backend tomonidan parse qilinadi.
+
+**Joriy holat:** LLM ulanguncha stub javob qaytarilishi mumkin — ishlab chiqarishda haqiqiy model ulash kerak.
+
 ---
 
 ## Joriy holat
 
-Hozirda AI Service qidiruv natijalarini yig'ib, oddiy javob generatsiya qiladi (template-asosida). Haqiqiy LLM integratsiyasi uchun qo'shimcha konfiguratsiya kerak.
+`/ask` uchun: qidiruv natijalarini yig'ib, oddiy javob generatsiya qiladi (template-asosida). Haqiqiy LLM integratsiyasi uchun qo'shimcha konfiguratsiya kerak.
 
 ---
 
@@ -104,18 +125,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## Backend bilan integratsiya
 
-Backend `POST /api/v1/ask` so'rovi kelganda AI Service'ga yo'naltiradi:
-
-```python
-# back/app/services/search_sync_service.py
-async def ask_ai(question: str) -> dict:
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{settings.ai_service_url}/ask",
-            json={"question": question}
-        )
-    return response.json()
-```
+- **Savol-javob:** `POST /api/v1/ai/ask` → `search_sync_service.ask_ai()` → `POST {AI_SERVICE_URL}/ask` (sinxron `httpx`).
+- **Matn ajratish:** `back/app/ai/extractor.py` → `POST {AI_SERVICE_URL}/extract` (`prompt` bilan).
 
 ---
 

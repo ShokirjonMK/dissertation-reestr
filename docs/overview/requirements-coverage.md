@@ -20,6 +20,19 @@
 | Login/parol autentifikatsiya | ✅ Bajarildi | JWT asosida |
 | Tizim yopiq (faqat autorizatsiyadan keyin) | ✅ Bajarildi | Auth guard barcha sahifalarda |
 
+### Yangi modullar (`tz_new_requirements` / 2026-03)
+
+| Talab | Holat | Izoh |
+|-------|-------|------|
+| Amaliyotga joriy etish takliflari (CRUD + status) | ✅ Bajarildi | `implementation_proposals`, `proposal_status_history`, API `/proposals` |
+| Strukturalangan muammo/takliflar | ✅ Bajarildi | `dissertation_problems`, `dissertation_proposals` jadvallari |
+| Bulk saqlash | ✅ Bajarildi | `/problems/bulk`, `/proposal-contents/bulk` |
+| PDF/Word dan AI ajratish | ⚠️ Qisman | `extract` + AI stub; LLM prod kerak |
+| Muammo/takliflar bo'yicha ES qidiruv | ✅ Bajarildi | `GET /search/problems-proposals` (search-service + backend proksi) |
+| Frontend: takliflar, admin, M&T qidiruv | ✅ Bajarildi | `docs/modules/*` hujjatlarida marshrutlar |
+
+Hujjatlar: [Modullar indeksi](../modules/README.md).
+
 ---
 
 ## UI/UX Spec bo'yicha
@@ -61,7 +74,7 @@
 | Persistent volumelar | ✅ Bajarildi | postgres/elastic/redis/storage |
 | Healthcheck | ✅ Bajarildi | Barcha servislarda |
 | Microservice arxitektura | ✅ Bajarildi | 5 alohida servis |
-| CI/CD | ❌ Rejalashtirilmagan | GitHub Actions yoki Jenkins kerak |
+| CI/CD | ⚠️ Qisman | `.github/workflows/deploy.yml` — lint/typecheck va deploy; to'liq pipeline talablariga moslashtirish mumkin |
 
 ---
 

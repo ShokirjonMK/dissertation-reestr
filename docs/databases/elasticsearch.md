@@ -55,6 +55,10 @@ Indeks nomi: `dissertations`
 | visibility | keyword | Ko'rinuvchanlik |
 | expert_rating | float | Ekspert reytingi |
 | defense_date | date | Himoya sanasi |
+| problems | nested | Strukturalangan muammolar (`order_num`, `problem_text`, `source_page`) |
+| proposal_contents | nested | Strukturalangan takliflar (`order_num`, `proposal_text`, `source_page`) |
+
+**Eslatma:** indeks avval yaratilgan bo'lsa va ushbu nested maydonlar yo'q bo'lsa, indeksni qayta yaratish yoki mapping yangilash talab etiladi — aks holda `GET /search/problems-proposals` to'g'ri ishlamasligi mumkin.
 
 ---
 
