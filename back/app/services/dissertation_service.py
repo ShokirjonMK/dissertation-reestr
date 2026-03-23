@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import UploadFile
 
 from app.core.config import settings
+from app.models.dissertation_content import DissertationProblem, DissertationProposalContent
 from app.models.entities import Dissertation
 from app.repositories.dissertation_repository import DissertationRepository
 from app.schemas.dissertation import DissertationFilter
@@ -61,6 +62,10 @@ class DissertationService:
 
     @staticmethod
     def to_index_payload(dissertation: Dissertation) -> dict:
+        problems: list[DissertationProblem] = list(getattr(dissertation, "problems", []) or [])
+        proposal_contents: list[DissertationProposalContent] = list(
+            getattr(dissertation, "proposal_contents", []) or []
+        )
         return {
             "id": dissertation.id,
             "title": dissertation.title,
@@ -85,4 +90,20 @@ class DissertationService:
             "expert_rating": dissertation.expert_rating,
             "region_id": dissertation.region_id,
             "visibility": dissertation.visibility,
+            "problems": [
+                {
+                    "order_num": p.order_num,
+                    "problem_text": p.problem_text,
+                    "source_page": p.source_page or "",
+                }
+                for p in problems
+            ],
+            "proposal_contents": [
+                {
+                    "order_num": p.order_num,
+                    "proposal_text": p.proposal_text,
+                    "source_page": p.source_page or "",
+                }
+                for p in proposal_contents
+            ],
         }

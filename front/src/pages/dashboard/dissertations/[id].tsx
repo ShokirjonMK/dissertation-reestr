@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { ProblemsProposalsEditor } from "@/components/problems-proposals/ProblemsProposalsEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -160,6 +161,15 @@ export default function DissertationDetailsPage() {
             <p className="text-muted-foreground">Kalit so&apos;zlar</p>
             <p>{(dissertation.keywords || []).join(", ") || "-"}</p>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Muammolar va takliflar (strukturalangan)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProblemsProposalsEditor dissertationId={dissertation.id} />
         </CardContent>
       </Card>
 

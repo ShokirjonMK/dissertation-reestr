@@ -28,6 +28,8 @@ class DissertationRepository:
                 selectinload(Dissertation.university),
                 selectinload(Dissertation.region),
                 selectinload(Dissertation.document),
+                selectinload(Dissertation.problems),
+                selectinload(Dissertation.proposal_contents),
             )
             .where(Dissertation.id == dissertation_id)
         )

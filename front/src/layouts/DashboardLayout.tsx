@@ -18,8 +18,10 @@ import {
   Bell,
   BotMessageSquare,
   BookOpen,
+  ClipboardList,
   ChevronDown,
   ChevronRight,
+  FileCheck,
   FilePlus2,
   GraduationCap,
   Globe,
@@ -390,6 +392,10 @@ export default function DashboardLayout({ title, subtitle, rightPanel, children 
   const canCreateDissertation =
     currentUser?.role.name === "admin" || currentUser?.role.name === "doctorant";
   const isAdmin = currentUser?.role.name === "admin";
+  const roleName = currentUser?.role.name;
+  const canEmployeeProposals =
+    roleName === "employee" || roleName === "moderator" || roleName === "admin";
+  const canAdminProposals = roleName === "moderator" || roleName === "admin";
 
   const isActive = (path: string) =>
     router.pathname === path || router.pathname.startsWith(path + "/");
@@ -431,6 +437,25 @@ export default function DashboardLayout({ title, subtitle, rightPanel, children 
         <BotMessageSquare className="h-4 w-4 shrink-0" />
         {!collapsed && <span>{t("nav.ai")}</span>}
       </Link>
+
+      <Link href="/dashboard/search/problems" className={navLinkClass("/dashboard/search/problems")}>
+        <Search className="h-4 w-4 shrink-0" />
+        {!collapsed && <span>Muammo/taklif qidiruvi</span>}
+      </Link>
+
+      {canEmployeeProposals && (
+        <Link href="/dashboard/proposals" className={navLinkClass("/dashboard/proposals")}>
+          <FileCheck className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Takliflar</span>}
+        </Link>
+      )}
+
+      {canAdminProposals && (
+        <Link href="/dashboard/admin/proposals" className={navLinkClass("/dashboard/admin/proposals")}>
+          <ClipboardList className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Takliflar (admin)</span>}
+        </Link>
+      )}
 
       {/* Foydalanuvchilar */}
       {isAdmin && (

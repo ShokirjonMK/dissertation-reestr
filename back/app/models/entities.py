@@ -239,6 +239,23 @@ class Dissertation(Base, TimestampMixin):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    implementation_proposals: Mapped[list["ImplementationProposal"]] = relationship(
+        "ImplementationProposal",
+        back_populates="dissertation",
+        cascade="all, delete-orphan",
+    )
+    problems: Mapped[list["DissertationProblem"]] = relationship(
+        "DissertationProblem",
+        back_populates="dissertation",
+        cascade="all, delete-orphan",
+        order_by="DissertationProblem.order_num",
+    )
+    proposal_contents: Mapped[list["DissertationProposalContent"]] = relationship(
+        "DissertationProposalContent",
+        back_populates="dissertation",
+        cascade="all, delete-orphan",
+        order_by="DissertationProposalContent.order_num",
+    )
 
     @property
     def author_name(self) -> str:

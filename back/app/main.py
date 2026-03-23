@@ -1,7 +1,19 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, catalogs, dissertations, health, search, users
+import app.models.dissertation_content  # noqa: F401
+import app.models.implementation_proposal  # noqa: F401
+
+from app.api import (
+    auth,
+    catalogs,
+    dissertation_content,
+    dissertations,
+    health,
+    implementation_proposals,
+    search,
+    users,
+)
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.services.reindex_service import sync_dissertations_to_search
@@ -24,6 +36,16 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(catalogs.router, prefix="/api/v1/catalogs", tags=["catalogs"])
 app.include_router(dissertations.router, prefix="/api/v1/dissertations", tags=["dissertations"])
+app.include_router(
+    dissertation_content.router,
+    prefix="/api/v1/dissertations",
+    tags=["dissertation-content"],
+)
+app.include_router(
+    implementation_proposals.router,
+    prefix="/api/v1",
+    tags=["implementation-proposals"],
+)
 app.include_router(search.router, prefix="/api/v1", tags=["search-ai"])
 
 

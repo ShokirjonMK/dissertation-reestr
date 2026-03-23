@@ -1,4 +1,6 @@
-﻿import httpx
+import json
+
+import httpx
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
@@ -15,6 +17,14 @@ class AskRequest(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     references: list[dict]
+
+
+class ExtractRequest(BaseModel):
+    prompt: str = Field(..., min_length=10)
+
+
+class ExtractResponse(BaseModel):
+    text: str
 
 
 def synthesize_answer(question: str, references: list[dict]) -> str:
@@ -38,6 +48,22 @@ def synthesize_answer(question: str, references: list[dict]) -> str:
 @app.get("/health")
 def health() -> dict[str, bool]:
     return {"ok": True}
+
+
+@app.post("/extract", response_model=ExtractResponse)
+def extract(payload: ExtractRequest) -> ExtractResponse:
+    """LLM ulanmaguncha: muammo/takliflar uchun minimal stub JSON."""
+    lowered = payload.prompt.lower()
+    problems: list[dict] = []
+    proposals: list[dict] = []
+    if "muammo" in lowered or "problem" in lowered:
+        problems.append({"order": 1, "text": "Stub: matndan aniq ajratish uchun LLM sozlang.", "page": ""})
+    if "taklif" in lowered or "proposal" in lowered:
+        proposals.append({"order": 1, "text": "Stub: takliflar uchun LLM sozlang.", "page": ""})
+    if not problems and not proposals:
+        problems.append({"order": 1, "text": "Stub javob: haqiqiy model ulanmagan.", "page": ""})
+    payload_out = {"problems": problems, "proposals": proposals}
+    return ExtractResponse(text=json.dumps(payload_out, ensure_ascii=False))
 
 
 @app.post("/ask", response_model=AskResponse)

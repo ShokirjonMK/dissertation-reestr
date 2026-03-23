@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from typing import Optional
+
+from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
 
 from app.search_engine import SearchEngine
@@ -37,6 +39,8 @@ class IndexRequest(BaseModel):
     supervisor_name: str = ""
     region_id: int | None = None
     defense_date: str | None = None
+    problems: list[dict] = Field(default_factory=list)
+    proposal_contents: list[dict] = Field(default_factory=list)
 
 
 @app.on_event("startup")
@@ -58,3 +62,28 @@ def index_dissertation(payload: IndexRequest) -> dict[str, bool]:
 @app.post("/search")
 def search(payload: SearchRequest) -> dict:
     return engine.search(payload.query, payload.filters, payload.size)
+
+
+@app.get("/search/problems-proposals")
+def search_problems_proposals(
+    q: str = Query(..., min_length=2),
+    type: str = Query("both", pattern="^(problems|proposals|both)$"),
+    field: Optional[str] = None,
+    year_from: Optional[int] = None,
+    year_to: Optional[int] = None,
+    degree: Optional[str] = None,
+    university_id: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=50),
+) -> dict:
+    return engine.search_problems_proposals(
+        q=q,
+        search_type=type,
+        field=field,
+        year_from=year_from,
+        year_to=year_to,
+        degree=degree,
+        university_id=university_id,
+        page=page,
+        size=size,
+    )

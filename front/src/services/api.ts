@@ -10,8 +10,9 @@ import type {
   UserLookup,
   UserUpdatePayload,
 } from "@/types";
+import type { ImplementationProposal, ImplementationProposalList } from "@/types/implementation-proposal";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -19,7 +20,7 @@ type RequestOptions = {
   auth?: boolean;
 };
 
-function buildAuthHeaders(auth = true): HeadersInit {
+export function buildAuthHeaders(auth = true): HeadersInit {
   const token = useAuthStore.getState().token;
   if (!auth || !token) {
     return {};
@@ -212,4 +213,73 @@ export async function askAI(question: string, topK = 5) {
     method: "POST",
     body: { question, top_k: topK },
   });
+}
+
+// ─── Amaliyotga joriy etish takliflari ───────────────────────────────────────
+
+export async function fetchMyProposals(params: { status?: string; page?: number; size?: number } = {}) {
+  const q = new URLSearchParams();
+  if (params.status) q.set("status", params.status);
+  if (params.page) q.set("page", String(params.page));
+  if (params.size) q.set("size", String(params.size));
+  const suffix = q.toString();
+  return request<ImplementationProposalList>(`/proposals/my${suffix ? `?${suffix}` : ""}`);
+}
+
+export async function fetchPendingProposals(page = 1, size = 20) {
+  const q = new URLSearchParams({ page: String(page), size: String(size) });
+  return request<ImplementationProposalList>(`/proposals/pending?${q}`);
+}
+
+export async function fetchAllProposals(params: {
+  status?: string;
+  dissertation_id?: number;
+  page?: number;
+  size?: number;
+} = {}) {
+  const q = new URLSearchParams();
+  if (params.status) q.set("status", params.status);
+  if (params.dissertation_id != null) q.set("dissertation_id", String(params.dissertation_id));
+  if (params.page) q.set("page", String(params.page));
+  if (params.size) q.set("size", String(params.size));
+  const suffix = q.toString();
+  return request<ImplementationProposalList>(`/proposals/${suffix ? `?${suffix}` : ""}`);
+}
+
+export async function createImplementationProposal(body: Record<string, unknown>) {
+  return request<ImplementationProposal>("/proposals/", { method: "POST", body });
+}
+
+export async function submitImplementationProposal(id: number) {
+  return request<ImplementationProposal>(`/proposals/${id}/submit`, { method: "POST" });
+}
+
+export async function fetchImplementationProposal(id: number) {
+  return request<ImplementationProposal>(`/proposals/${id}`);
+}
+
+export async function fetchDissertationProblems(dissertationId: number) {
+  return request<
+    Array<{
+      id: number;
+      order_num: number;
+      problem_text: string;
+      problem_category: string | null;
+      source_page: string | null;
+      is_auto_extracted: boolean;
+    }>
+  >(`/dissertations/${dissertationId}/problems`);
+}
+
+export async function fetchDissertationProposalContents(dissertationId: number) {
+  return request<
+    Array<{
+      id: number;
+      order_num: number;
+      proposal_text: string;
+      proposal_category: string | null;
+      source_page: string | null;
+      is_auto_extracted: boolean;
+    }>
+  >(`/dissertations/${dissertationId}/proposal-contents`);
 }
