@@ -128,7 +128,7 @@ export default function ProposalDetailPage() {
 
   const p = detailQuery.data;
   const role = user?.role.name;
-  const isMod = role === "admin" || role === "moderator";
+  const canReview = role === "admin" || role === "moderator" || role === "employee";
   const isOwner = p && user && p.proposed_by === user.id;
 
   return (
@@ -149,9 +149,16 @@ export default function ProposalDetailPage() {
             <CardContent className="grid gap-3 text-sm">
               <p className="text-muted-foreground">
                 Dissertatsiya:{" "}
-                <Link className="text-primary hover:underline" href={`/dashboard/dissertations/${p.dissertation_id}`}>
-                  #{p.dissertation_id}
-                </Link>
+                {p.dissertation_id != null ? (
+                  <Link
+                    className="text-primary hover:underline"
+                    href={`/dashboard/dissertations/${p.dissertation_id}`}
+                  >
+                    #{p.dissertation_id}
+                  </Link>
+                ) : (
+                  <span className="text-foreground/70">hali bog&apos;lanmagan</span>
+                )}
               </p>
               <p>
                 <span className="text-muted-foreground">Muhimlik:</span> {PRIORITY_LABELS[p.priority]}
@@ -186,17 +193,17 @@ export default function ProposalDetailPage() {
                 Yuborish
               </Button>
             )}
-            {isMod && p.status === "submitted" && (
+            {canReview && p.status === "submitted" && (
               <Button type="button" onClick={() => startReview.mutate()} disabled={startReview.isPending}>
                 Ko&apos;rib chiqishni boshlash
               </Button>
             )}
           </div>
 
-          {isMod && p.status === "under_review" && (
+          {canReview && p.status === "under_review" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Moderatsiya</CardTitle>
+                <CardTitle className="text-base">Ko&apos;rib chiqish (Adliya / moderator)</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid gap-2">

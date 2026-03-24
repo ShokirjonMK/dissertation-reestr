@@ -247,7 +247,11 @@ export async function fetchAllProposals(params: {
 }
 
 export async function createImplementationProposal(body: Record<string, unknown>) {
-  return request<ImplementationProposal>("/proposals/", { method: "POST", body });
+  const cleaned: Record<string, unknown> = { ...body };
+  if (cleaned.dissertation_id == null) {
+    delete cleaned.dissertation_id;
+  }
+  return request<ImplementationProposal>("/proposals/", { method: "POST", body: cleaned });
 }
 
 export async function submitImplementationProposal(id: number) {

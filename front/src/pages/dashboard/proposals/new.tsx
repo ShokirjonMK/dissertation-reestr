@@ -15,7 +15,13 @@ import DashboardLayout from "@/layouts/DashboardLayout";
 import { createImplementationProposal, fetchDissertations, submitImplementationProposal } from "@/services/api";
 
 const schema = z.object({
-  dissertation_id: z.string().min(1, "Dissertatsiya tanlang").transform((v) => Number(v)),
+  dissertation_id: z
+    .string()
+    .refine(
+      (v) => v.trim() === "" || (!Number.isNaN(Number(v)) && Number(v) > 0),
+      "Noto'g'ri dissertatsiya tanlovi"
+    )
+    .transform((v) => (v.trim() === "" ? undefined : Number(v))),
   title: z.string().min(5).max(500),
   problem_description: z.string().min(20),
   proposal_text: z.string().min(20),
@@ -94,13 +100,16 @@ export default function NewProposalPage() {
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
-            <Label>Dissertatsiya</Label>
+            <Label>Dissertatsiya (ixtiyoriy)</Label>
+            <p className="text-xs text-muted-foreground">
+              Muammo va yechimni avval yozishingiz mumkin; dissertatsiyani keyin bog&apos;lash mumkin.
+            </p>
             <select
               className="rounded-md border border-input bg-background px-2 py-2 text-sm"
               value={form.watch("dissertation_id")}
               onChange={(e) => form.setValue("dissertation_id", e.target.value, { shouldValidate: true })}
             >
-              <option value="">Tanlang</option>
+              <option value="">Hozircha bog&apos;lanmagan</option>
               {(dissQuery.data || []).map((d) => (
                 <option key={d.id} value={d.id}>
                   #{d.id} — {d.title}

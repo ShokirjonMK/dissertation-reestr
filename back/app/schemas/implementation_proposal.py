@@ -19,7 +19,8 @@ class ProposalStatusHistoryOut(BaseModel):
 
 
 class ImplementationProposalCreate(BaseModel):
-    dissertation_id: int
+    """dissertation_id ixtiyoriy: avvalo muammo/yechim taklifi, tasdiqdan keyin dissertatsiya yaratiladi."""
+    dissertation_id: int | None = None
     title: str = Field(..., min_length=5, max_length=500)
     problem_description: str = Field(..., min_length=20)
     proposal_text: str = Field(..., min_length=20)
@@ -32,6 +33,7 @@ class ImplementationProposalCreate(BaseModel):
 
 
 class ImplementationProposalUpdate(BaseModel):
+    dissertation_id: int | None = None
     title: str | None = None
     problem_description: str | None = None
     proposal_text: str | None = None
@@ -61,7 +63,7 @@ class ImplementationProposalOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    dissertation_id: int
+    dissertation_id: int | None
     proposed_by: int
     reviewed_by: int | None
     title: str

@@ -17,7 +17,8 @@ export default function AdminProposalsPage() {
   const [tab, setTab] = useState<"pending" | "all">("pending");
   const [status, setStatus] = useState<ProposalStatus | "">("");
 
-  const allowed = user?.role.name === "admin" || user?.role.name === "moderator";
+  const allowed =
+    user?.role.name === "admin" || user?.role.name === "moderator" || user?.role.name === "employee";
 
   const pendingQuery = useQuery({
     queryKey: ["admin-proposals-pending"],
@@ -49,7 +50,7 @@ export default function AdminProposalsPage() {
   const loading = tab === "pending" ? pendingQuery.isLoading : allQuery.isLoading;
 
   return (
-    <DashboardLayout title="Takliflar" subtitle="Moderator / admin">
+    <DashboardLayout title="Takliflar" subtitle="Adliya xodimi / moderator / admin">
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           type="button"
@@ -101,7 +102,9 @@ export default function AdminProposalsPage() {
               <div className="min-w-0">
                 <p className="font-medium">{p.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  #{p.id} · diss. {p.dissertation_id} · {PRIORITY_LABELS[p.priority]}
+                  #{p.id} ·{" "}
+                  {p.dissertation_id != null ? `diss. ${p.dissertation_id}` : "dissertatsiyasiz"} ·{" "}
+                  {PRIORITY_LABELS[p.priority]}
                 </p>
               </div>
               <ProposalStatusBadge status={p.status} />

@@ -87,7 +87,8 @@ export default function MyProposalsPage() {
                 <div className="min-w-0">
                   <p className="font-medium text-foreground">{p.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    Dissertatsiya #{p.dissertation_id} · {PRIORITY_LABELS[p.priority]}
+                    {p.dissertation_id != null ? `Dissertatsiya #${p.dissertation_id}` : "Dissertatsiyasiz"} ·{" "}
+                    {PRIORITY_LABELS[p.priority]}
                   </p>
                 </div>
                 <ProposalStatusBadge status={p.status} />

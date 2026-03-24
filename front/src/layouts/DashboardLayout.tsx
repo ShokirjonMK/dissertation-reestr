@@ -393,9 +393,14 @@ export default function DashboardLayout({ title, subtitle, rightPanel, children 
     currentUser?.role.name === "admin" || currentUser?.role.name === "doctorant";
   const isAdmin = currentUser?.role.name === "admin";
   const roleName = currentUser?.role.name;
-  const canEmployeeProposals =
+  const canMyProposalsNav =
+    roleName === "doctorant" ||
+    roleName === "supervisor" ||
+    roleName === "employee" ||
+    roleName === "moderator" ||
+    roleName === "admin";
+  const canReviewerProposalsNav =
     roleName === "employee" || roleName === "moderator" || roleName === "admin";
-  const canAdminProposals = roleName === "moderator" || roleName === "admin";
 
   const isActive = (path: string) =>
     router.pathname === path || router.pathname.startsWith(path + "/");
@@ -443,17 +448,17 @@ export default function DashboardLayout({ title, subtitle, rightPanel, children 
         {!collapsed && <span>Muammo/taklif qidiruvi</span>}
       </Link>
 
-      {canEmployeeProposals && (
+      {canMyProposalsNav && (
         <Link href="/dashboard/proposals" className={navLinkClass("/dashboard/proposals")}>
           <FileCheck className="h-4 w-4 shrink-0" />
           {!collapsed && <span>Takliflar</span>}
         </Link>
       )}
 
-      {canAdminProposals && (
+      {canReviewerProposalsNav && (
         <Link href="/dashboard/admin/proposals" className={navLinkClass("/dashboard/admin/proposals")}>
           <ClipboardList className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Takliflar (admin)</span>}
+          {!collapsed && <span>Takliflar (ko&apos;rib chiqish)</span>}
         </Link>
       )}
 

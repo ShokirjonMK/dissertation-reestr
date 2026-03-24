@@ -9,7 +9,9 @@
 
 ## 1. Maqsad
 
-Dissertatsiya bilan bog‘liq holda **amaliyotga joriy etish bo‘yicha takliflar**ni alohida hujjat sifatida yuritish: yaratish, tahrirlash, yuborish, moderator/admin tomonidan ko‘rib chiqish, tasdiqlash, rad etish yoki qayta ishlash talabi. Har bir holat o‘zgarishi **tarix jadvaliga** yoziladi.
+**Biznes oqim:** doktorant (yoki boshqa ruxsat etilgan foydalanuvchi) **muammo va yechim taklifini** yozadi; **Adliya xodimi** (`employee`) yoki moderator/admin taklifni ko‘rib chiqib **tasdiqlaydi yoki rad etadi**; shundan keyin alohida ravishda **ilmiy ish (dissertatsiya)** boshlanishi mumkin. Shu sababli taklif **dissertatsiyaga ixtiyoriy bog‘lanadi** — avval taklif, keyin `dissertation_id` ni bog‘lash yoki dissertatsiya yaratish mumkin.
+
+**Texnik jihat:** amaliyotga joriy etish bo‘yicha takliflarni alohida hujjat sifatida yuritish: yaratish, tahrirlash, yuborish, ko‘rib chiqish, tasdiqlash, rad etish yoki qayta ishlash talabi. Har bir holat o‘zgarishi **tarix jadvaliga** yoziladi.
 
 ---
 
@@ -20,7 +22,7 @@ Dissertatsiya bilan bog‘liq holda **amaliyotga joriy etish bo‘yicha taklifla
 | Maydon | Tavsif |
 |--------|--------|
 | `id` | PK (integer) |
-| `dissertation_id` | FK → `dissertations.id` (CASCADE) |
+| `dissertation_id` | FK → `dissertations.id` (CASCADE), **nullable** — taklif dissertatsiyadan oldin yaratilishi mumkin |
 | `proposed_by` | FK → `users.id` |
 | `reviewed_by` | FK → `users.id`, nullable |
 | `title`, `problem_description`, `proposal_text`, `expected_result` | Matn |
@@ -53,7 +55,7 @@ draft ──submit──► submitted ──start_review──► under_review
 
 - **Tahrirlash:** faqat `draft` yoki `revision_required`.
 - **Yuborish:** `draft` yoki `revision_required` dan `submitted` ga.
-- **Moderatsiya:** faqat `under_review` dan `approved` / `rejected` / `revision_required`.
+- **Ko‘rib chiqish (Adliya / moderator / admin):** `under_review` dan `approved` / `rejected` / `revision_required`.
 
 ---
 
@@ -63,10 +65,10 @@ Barcha endpointlar JWT talab qiladi (Swagger: `/docs`).
 
 | Usul | Yo‘l | Tavsif |
 |------|------|--------|
-| POST | `/proposals/` | Yaratish (admin, moderator, employee) |
+| POST | `/proposals/` | Yaratish (doctorant, supervisor, admin, moderator, employee) |
 | GET | `/proposals/my` | Joriy foydalanuvchining takliflari |
-| GET | `/proposals/pending` | Yuborilganlar (moderator, admin) |
-| GET | `/proposals/` | Ro‘yxat (moderator, admin), filtr: `status`, `dissertation_id` |
+| GET | `/proposals/pending` | Yuborilganlar (employee, moderator, admin) |
+| GET | `/proposals/` | Ro‘yxat (employee, moderator, admin), filtr: `status`, `dissertation_id` |
 | GET | `/proposals/{id}` | Batafsil + tarix |
 | PUT | `/proposals/{id}` | Yangilash (egasi yoki admin/moderator qoidalari) |
 | POST | `/proposals/{id}/submit` | Yuborish |

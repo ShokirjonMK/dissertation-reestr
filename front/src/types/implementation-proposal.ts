@@ -19,7 +19,7 @@ export interface StatusHistory {
 
 export interface ImplementationProposal {
   id: number;
-  dissertation_id: number;
+  dissertation_id: number | null;
   proposed_by: number;
   reviewed_by: number | null;
   title: string;

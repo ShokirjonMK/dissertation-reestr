@@ -26,9 +26,10 @@ class ImplementationProposalService:
         self.db = db
 
     def create(self, data: ImplementationProposalCreate, user_id: int) -> ImplementationProposal:
-        diss = self.db.get(Dissertation, data.dissertation_id)
-        if diss is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dissertatsiya topilmadi")
+        if data.dissertation_id is not None:
+            diss = self.db.get(Dissertation, data.dissertation_id)
+            if diss is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dissertatsiya topilmadi")
 
         payload = data.model_dump()
         proposal = ImplementationProposal(
@@ -94,7 +95,14 @@ class ImplementationProposalService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Faqat draft yoki revision_required statusdagi taklifni tahrirlash mumkin",
             )
-        for key, value in data.model_dump(exclude_unset=True).items():
+        dump = data.model_dump(exclude_unset=True)
+        if dump.get("dissertation_id") is not None:
+            if self.db.get(Dissertation, dump["dissertation_id"]) is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Dissertatsiya topilmadi",
+                )
+        for key, value in dump.items():
             setattr(proposal, key, value)
         proposal.updated_at = datetime.utcnow()
         self.db.commit()

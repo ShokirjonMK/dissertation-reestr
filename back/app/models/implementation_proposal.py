@@ -33,9 +33,9 @@ class ImplementationProposal(Base):
     __tablename__ = "implementation_proposals"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    dissertation_id: Mapped[int] = mapped_column(
+    dissertation_id: Mapped[int | None] = mapped_column(
         ForeignKey("dissertations.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     proposed_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)

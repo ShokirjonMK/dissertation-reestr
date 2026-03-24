@@ -30,7 +30,13 @@ def create_proposal(
     current_user: User = Depends(get_current_user),
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalOut:
-    if current_user.role.name not in {RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE}:
+    if current_user.role.name not in {
+        RoleName.ADMIN,
+        RoleName.MODERATOR,
+        RoleName.EMPLOYEE,
+        RoleName.DOCTORANT,
+        RoleName.SUPERVISOR,
+    }:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ruxsat yo'q")
     return service.create(data, current_user.id)
 
@@ -51,7 +57,7 @@ def my_proposals(
 def pending_proposals(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE)),
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalList:
     data = service.list(status_filter=ProposalStatus.submitted, page=page, size=size)
@@ -64,7 +70,7 @@ def list_proposals(
     dissertation_id: int | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE)),
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalList:
     data = service.list(
@@ -83,7 +89,7 @@ def get_proposal(
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalOut:
     proposal = service.get(proposal_id)
-    if current_user.role.name not in {RoleName.ADMIN, RoleName.MODERATOR}:
+    if current_user.role.name not in {RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE}:
         if proposal.proposed_by != current_user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ruxsat yo'q")
     return proposal
@@ -119,7 +125,7 @@ def submit_proposal(
 @router.post("/{proposal_id}/start-review", response_model=ImplementationProposalOut)
 def start_review(
     proposal_id: int,
-    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE)),
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalOut:
     return service.start_review(proposal_id, current_user.id)
@@ -129,7 +135,7 @@ def start_review(
 def approve_proposal(
     proposal_id: int,
     data: ReviewAction,
-    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE)),
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalOut:
     return service.approve(proposal_id, current_user.id, data)
@@ -139,7 +145,7 @@ def approve_proposal(
 def reject_proposal(
     proposal_id: int,
     data: RejectAction,
-    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE)),
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalOut:
     return service.reject(proposal_id, current_user.id, data)
@@ -149,7 +155,7 @@ def reject_proposal(
 def request_revision(
     proposal_id: int,
     data: RevisionAction,
-    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR)),
+    current_user: User = Depends(require_roles(RoleName.ADMIN, RoleName.MODERATOR, RoleName.EMPLOYEE)),
     service: ImplementationProposalService = Depends(get_service),
 ) -> ImplementationProposalOut:
     return service.request_revision(proposal_id, current_user.id, data)
